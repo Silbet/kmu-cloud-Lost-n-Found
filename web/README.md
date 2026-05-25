@@ -18,13 +18,13 @@ npm.cmd run dev
 
 | 변수 | 설명 | 기본값 |
 |---|---|---|
-| `VITE_API_BASE_URL` | 백엔드 API 베이스 URL | `http://localhost:3000` |
+| `VITE_API_BASE_URL` | 백엔드 API 베이스 URL | `http://localhost:3000/api` |
 | `VITE_USE_MOCK` | `true` 면 모든 API 호출이 Mock 어댑터로 라우팅. `false` 면 실제 백엔드 호출 | `false` |
 | `VITE_AUTH_HEADER_NAME` | 토큰 첨부 헤더 이름 | `Authorization` |
 
 ## Mock ↔ 실제 모드 전환
 
-- 실제 백엔드 사용: `.env`에서 `VITE_USE_MOCK=false`, `VITE_API_BASE_URL=http://localhost:3000` 설정 후 `npm.cmd run dev` 재시작
+- 실제 백엔드 사용: `.env`에서 `VITE_USE_MOCK=false`, `VITE_API_BASE_URL=http://localhost:3000/api` 설정 후 `npm.cmd run dev` 재시작
 - Mock 사용: `.env`에서 `VITE_USE_MOCK=true` 설정 후 `npm.cmd run dev` 재시작
 - Mock 데이터는 `localStorage` 에 영속화. 헤더의 **[Mock 초기화]** 버튼으로 시드값 리셋
 
@@ -66,11 +66,11 @@ npm.cmd run dev
 npm run build      # dist/ 폴더 생성
 ```
 
-`dist/` 폴더의 정적 산출물은 단일 EC2 배포 구성에서 백엔드와 함께 서비스할 수 있습니다.
+EC2 배포용 Docker 빌드는 `dist/` 정적 산출물을 NestJS 컨테이너에 포함합니다. 배포 후 브라우저는 `http://EC2-공인-IP`에서 화면을 열고, 같은 서버의 `/api`로 API를 호출합니다.
 
 ## 백엔드 연동 체크리스트
 
-- [x] `VITE_API_BASE_URL` 을 로컬 백엔드 주소로 설정
+- [x] `VITE_API_BASE_URL` 을 로컬 백엔드 API 주소로 설정
 - [x] `VITE_USE_MOCK=false` 로 전환 가능
 - [x] CORS 설정
 - [x] 인증 토큰 발급 엔드포인트 연결 (`POST /auth/login`)

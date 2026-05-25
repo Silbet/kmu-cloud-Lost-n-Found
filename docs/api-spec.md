@@ -1,6 +1,6 @@
 # API 명세서
 
-모든 응답은 `Content-Type: application/json`. 인증 필요 엔드포인트는 `Authorization: Bearer <token>` 헤더 첨부.
+API 기본 경로는 `/api`입니다. 모든 응답은 `Content-Type: application/json`. 인증 필요 엔드포인트는 `Authorization: Bearer <token>` 헤더 첨부.
 
 ## 응답 규약
 
@@ -13,65 +13,65 @@
 ## 인증
 
 ```
-POST   /auth/signup    { email, password, name, contact, roles } → { user }
-POST   /auth/login     { email, password } → { token, user }
-POST   /auth/logout
-GET    /auth/me        → User
+POST   /api/auth/signup    { email, password, name, contact, roles } → { user }
+POST   /api/auth/login     { email, password } → { token, user }
+POST   /api/auth/logout
+GET    /api/auth/me        → User
 ```
 
 ## 분실 신고
 
 ```
-POST   /reports              { itemName, category, lostPlace, lostDate, description, reporterContact } → LostReport
-GET    /reports/my           → LostReport[]
-GET    /reports/:reportId    → LostReport
-PATCH  /reports/:reportId    → LostReport
+POST   /api/reports              { itemName, category, lostPlace, lostDate, description, reporterContact } → LostReport
+GET    /api/reports/my           → LostReport[]
+GET    /api/reports/:reportId    → LostReport
+PATCH  /api/reports/:reportId    → LostReport
   # 백엔드 검증:
   # - 상태가 접수/매칭후보있음일 때만 허용
   # - 활성 확인 요청이 있으면 409 Conflict
   # - 성공 시 매칭 후보 재계산 자동 트리거
-DELETE /reports/:reportId
+DELETE /api/reports/:reportId
   # - 상태가 접수/매칭후보있음일 때만 허용
   # - CASCADE 매칭 후보 삭제
-POST   /reports/:reportId/finalize  → LostReport
+POST   /api/reports/:reportId/finalize  → LostReport
   # 찾기완료 → 종료 (보관소 관리자 수동 호출)
 ```
 
 ## 습득물
 
 ```
-POST   /items                 → FoundItem
-GET    /items/my              → FoundItem[]
-GET    /items                 → FoundItem[]   # 보관소 관리자
-DELETE /items/:itemId         # 등록 상태에서만 가능
-PATCH  /items/:itemId/storage  { storageLocation } → FoundItem
+POST   /api/items                 → FoundItem
+GET    /api/items/my              → FoundItem[]
+GET    /api/items                 → FoundItem[]   # 보관소 관리자
+DELETE /api/items/:itemId         # 등록 상태에서만 가능
+PATCH  /api/items/:itemId/storage  { storageLocation } → FoundItem
   # 보관 위치 입력 시 등록 → 보관중 자동 전환 + 매칭 트리거
-PATCH  /items/:itemId/status   { status } → FoundItem
+PATCH  /api/items/:itemId/status   { status } → FoundItem
 ```
 
 ## 이미지 업로드
 
 ```
-POST   /uploads/image  (multipart/form-data: file) → { imageUrl }
+POST   /api/uploads/image  (multipart/form-data: file) → { imageUrl }
 ```
 
 ## 매칭 / 확인 요청
 
 ```
-GET    /reports/:reportId/matches  → Match[] (item 포함)
-POST   /matches/:matchId/confirm   → Match
+GET    /api/reports/:reportId/matches  → Match[] (item 포함)
+POST   /api/matches/:matchId/confirm   → Match
   # 분실 신고당 활성 확인 요청 1건 제한 (409 Conflict)
-POST   /matches/:matchId/approve   → Match
+POST   /api/matches/:matchId/approve   → Match
   # Pickup 자동 생성, 수령 코드 발급, 분실자에게 알림
-POST   /matches/:matchId/reject    { reason? } → Match
+POST   /api/matches/:matchId/reject    { reason? } → Match
   # 매칭 상태 '활성'으로 복귀, rejectReason 저장, 알림
 ```
 
 ## 검색 (비로그인 가능)
 
 ```
-GET    /search/lost   ?category=&place=&dateFrom=&dateTo=&keyword=
-GET    /search/found  ?category=&place=&dateFrom=&dateTo=&keyword=
+GET    /api/search/lost   ?category=&place=&dateFrom=&dateTo=&keyword=
+GET    /api/search/found  ?category=&place=&dateFrom=&dateTo=&keyword=
   # 비로그인 호출 시 백엔드가 민감정보 마스킹
   # 수령완료 습득물은 응답에서 제외
   # 매칭 후보는 습득물이 '보관중' 이상일 때만 노출
@@ -80,34 +80,34 @@ GET    /search/found  ?category=&place=&dateFrom=&dateTo=&keyword=
 ## 수령
 
 ```
-GET    /pickups/:pickupId           → Pickup
-GET    /pickups/waiting             → Pickup[]   # 보관소 관리자
-POST   /pickups/:pickupId/verify    { name, contact, code }
+GET    /api/pickups/:pickupId           → Pickup
+GET    /api/pickups/waiting             → Pickup[]   # 보관소 관리자
+POST   /api/pickups/:pickupId/verify    { name, contact, code }
   → { allMatched: boolean, mismatches: ('name'|'contact'|'code')[] }
-POST   /pickups/:pickupId/complete  → Pickup
+POST   /api/pickups/:pickupId/complete  → Pickup
   # 자동: 습득물 수령완료, 분실 신고 찾기완료, 매칭 비활성
-POST   /pickups/:pickupId/cancel    { reason: CancelReason } → Pickup
+POST   /api/pickups/:pickupId/cancel    { reason: CancelReason } → Pickup
   # 자동: 습득물 보관중 복귀, 분실 신고 매칭후보있음 복귀, 매칭 활성 복귀
 ```
 
 ## 알림
 
 ```
-GET    /notifications              → Notification[]
-GET    /notifications/unread-count → { count: number }
-PATCH  /notifications/:id/read     → Notification
-PATCH  /notifications/read-all     → { updated: number }
+GET    /api/notifications              → Notification[]
+GET    /api/notifications/unread-count → { count: number }
+PATCH  /api/notifications/:id/read     → Notification
+PATCH  /api/notifications/read-all     → { updated: number }
 ```
 
 ## 운영 관리자
 
 ```
-GET    /admin/reports     → LostReport[]
-GET    /admin/items       → FoundItem[]
-GET    /admin/stats       → { lostReportsByStatus, foundItemsByStatus, recentTrend }
-GET    /admin/unclaimed   → FoundItem[]
-GET    /admin/config      → SystemConfig
-PATCH  /admin/config      → SystemConfig
+GET    /api/admin/reports     → LostReport[]
+GET    /api/admin/items       → FoundItem[]
+GET    /api/admin/stats       → { lostReportsByStatus, foundItemsByStatus, recentTrend }
+GET    /api/admin/unclaimed   → FoundItem[]
+GET    /api/admin/config      → SystemConfig
+PATCH  /api/admin/config      → SystemConfig
 ```
 
 ## 도메인 타입
@@ -129,10 +129,10 @@ PATCH  /admin/config      → SystemConfig
 ### 분실 신고
 - `접수` → `매칭후보있음` (매칭 후보 생성 시 자동)
 - `매칭후보있음` → `찾기완료` (수령 완료 시 자동)
-- `찾기완료` → `종료` (보관소 관리자 수동, `POST /reports/:id/finalize`)
+- `찾기완료` → `종료` (보관소 관리자 수동, `POST /api/reports/:id/finalize`)
 
 ### 습득물
-- `등록` → `보관중` (보관 위치 입력 시 자동, `PATCH /items/:id/storage`)
+- `등록` → `보관중` (보관 위치 입력 시 자동, `PATCH /api/items/:id/storage`)
 - `보관중` → `수령대기` (확인 요청 승인 시 자동)
 - `수령대기` → `수령완료` (수령 완료 시 자동)
 - `수령대기` → `보관중` (수령 대기 취소 시 자동)

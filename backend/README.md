@@ -103,6 +103,8 @@ http://localhost:3000/health
 { "status": "ok" }
 ```
 
+프론트엔드는 별도 개발 서버인 `http://localhost:5273`에서 실행하고, API 호출은 `http://localhost:3000/api`로 전달됩니다.
+
 ## 방법 2. Docker 없이 실행
 
 Docker Desktop이 없다면 PostgreSQL을 직접 설치해도 됩니다.
@@ -164,5 +166,46 @@ npm.cmd run prisma:seed      # 기본 설정값/데모 계정 생성
 
 ```text
 백엔드: http://localhost:3000
+백엔드 API: http://localhost:3000/api
 PostgreSQL: localhost:5432
+```
+
+## EC2 배포 실행
+
+배포에서는 별도 프론트 컨테이너를 만들지 않습니다. Docker 빌드 중 React 화면을 만들고, NestJS 백엔드 컨테이너가 화면과 API를 함께 제공합니다.
+
+```text
+EC2 외부 공개: http://EC2-공인-IP        # 화면
+EC2 외부 공개: http://EC2-공인-IP/api    # API
+EC2 내부 전용: PostgreSQL 컨테이너       # 외부 포트 없음
+```
+
+EC2에 코드를 내려받은 뒤 프로젝트 루트에서 실행합니다.
+
+```bash
+cd ~/AWSCloudComputing
+cp .env.ec2.example .env.ec2
+nano .env.ec2
+```
+
+`.env.ec2`에서 `POSTGRES_PASSWORD`와 `JWT_SECRET`을 다른 값으로 바꿉니다. 비밀번호에는 URL 주소에서 의미가 있는 `@`, `:`, `/`, `?`, `#` 문자는 사용하지 않는 것이 간단합니다.
+
+```bash
+docker compose --env-file .env.ec2 -f docker-compose.ec2.yml up -d --build
+docker compose --env-file .env.ec2 -f docker-compose.ec2.yml exec backend npx prisma migrate deploy
+docker compose --env-file .env.ec2 -f docker-compose.ec2.yml exec backend npm run prisma:seed
+```
+
+확인:
+
+```bash
+curl http://localhost/health
+```
+
+브라우저에서는 `http://EC2-공인-IP`로 접속합니다. 재실행 또는 상태 확인 명령은 아래와 같습니다.
+
+```bash
+docker compose --env-file .env.ec2 -f docker-compose.ec2.yml ps
+docker compose --env-file .env.ec2 -f docker-compose.ec2.yml logs -f backend
+docker compose --env-file .env.ec2 -f docker-compose.ec2.yml up -d --build
 ```
