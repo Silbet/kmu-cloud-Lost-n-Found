@@ -6,11 +6,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { toPublicUser } from '../common/mappers';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
-import { JwtPayload, toPublicUser } from './auth.types';
+import { JwtPayload } from './auth.types';
 
 @Injectable()
 export class AuthService {
