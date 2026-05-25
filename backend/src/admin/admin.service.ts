@@ -1,7 +1,13 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { FoundItemStatus, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { toFoundItem, toLostReport, toPublicUser } from '../common/mappers';
+import {
+  toFoundItem,
+  toFoundItemStatus,
+  toLostReport,
+  toLostReportStatus,
+  toPublicUser,
+} from '../common/mappers';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
@@ -21,6 +27,9 @@ export class AdminService {
   }
 
   async stats() {
+    const since = new Date();
+    since.setDate(since.getDate() - 29);
+    since.setHours(0, 0, 0, 0);
     const reports = await this.prisma.lostReport.groupBy({
       by: ['status'],
       _count: { status: true },
@@ -29,10 +38,32 @@ export class AdminService {
       by: ['status'],
       _count: { status: true },
     });
+    const recentReports = await this.prisma.lostReport.findMany({
+      where: { createdAt: { gte: since } },
+      select: { createdAt: true },
+    });
+    const recentItems = await this.prisma.foundItem.findMany({
+      where: { createdAt: { gte: since } },
+      select: { createdAt: true },
+    });
+    const recentTrend = Array.from({ length: 30 }, (_, offset) => {
+      const date = new Date(since);
+      date.setDate(since.getDate() + offset);
+      const key = date.toISOString().slice(0, 10);
+      return {
+        date: key.slice(5),
+        reports: recentReports.filter((entry) => entry.createdAt.toISOString().startsWith(key)).length,
+        items: recentItems.filter((entry) => entry.createdAt.toISOString().startsWith(key)).length,
+      };
+    });
     return {
-      lostReportsByStatus: Object.fromEntries(reports.map((r) => [r.status, r._count.status])),
-      foundItemsByStatus: Object.fromEntries(items.map((i) => [i.status, i._count.status])),
-      recentTrend: [],
+      lostReportsByStatus: Object.fromEntries(
+        reports.map((report) => [toLostReportStatus(report.status), report._count.status]),
+      ),
+      foundItemsByStatus: Object.fromEntries(
+        items.map((item) => [toFoundItemStatus(item.status), item._count.status]),
+      ),
+      recentTrend,
     };
   }
 

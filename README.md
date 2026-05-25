@@ -2,7 +2,7 @@
 
 국민대학교 캠퍼스 내 분실물 신고 및 보관소 연동 시스템 저장소입니다.
 
-현재는 웹 프론트엔드가 먼저 구성되어 있으며, 이후 백엔드와 AWS 인프라 코드가 같은 저장소에 추가될 예정입니다.
+React 프론트엔드와 NestJS 백엔드, PostgreSQL DB가 구성되어 있습니다. 로컬에서는 PostgreSQL만 Docker로 실행하고 프론트엔드와 백엔드는 개발 서버로 실행합니다.
 
 ## 디렉토리 구조
 
@@ -19,9 +19,9 @@
 
 ```bash
 cd web
-npm install
-cp .env.example .env
-npm run dev
+npm.cmd install
+Copy-Item .env.example .env
+npm.cmd run dev
 ```
 
 ## 백엔드

@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { static as expressStatic } from 'express';
+import { mkdirSync } from 'fs';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -18,7 +19,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.use('/uploads', expressStatic(config.get<string>('UPLOAD_DIR') ?? './uploads'));
+  const uploadDir = config.get<string>('UPLOAD_DIR') ?? './uploads';
+  mkdirSync(uploadDir, { recursive: true });
+  app.use('/uploads', expressStatic(uploadDir));
 
   const port = config.get<number>('PORT') ?? 3000;
   await app.listen(port);

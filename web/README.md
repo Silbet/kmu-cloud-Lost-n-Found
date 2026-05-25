@@ -1,16 +1,17 @@
 # 국민대 분실물 보관소 - 웹 프론트엔드
 
 국민대학교 캠퍼스 내 **분실물 신고 및 보관소 연동 시스템**의 웹 프론트엔드(React SPA)입니다.
-백엔드/AWS 인프라는 다른 팀원이 담당하며, 본 저장소는 순수 프론트엔드 산출물입니다.
-
-Mock 모드에서 모든 흐름이 실제처럼 동작하며, 환경변수 토글 하나로 백엔드 연결이 가능합니다.
+현재 저장소의 `backend/` NestJS API 서버와 연결하여 사용할 수 있고, 필요하면 Mock 모드도 사용할 수 있습니다.
 
 ## 로컬 실행
 
-```bash
-npm install
-cp .env.example .env
-npm run dev
+백엔드와 PostgreSQL을 먼저 실행한 뒤 PowerShell에서 실행합니다.
+
+```powershell
+cd C:\01_Dev\AWSCloudComputing\web
+Copy-Item .env.example .env
+npm.cmd install
+npm.cmd run dev
 ```
 
 ## 환경변수
@@ -18,23 +19,25 @@ npm run dev
 | 변수 | 설명 | 기본값 |
 |---|---|---|
 | `VITE_API_BASE_URL` | 백엔드 API 베이스 URL | `http://localhost:3000` |
-| `VITE_USE_MOCK` | `true` 면 모든 API 호출이 Mock 어댑터로 라우팅. `false` 면 실제 백엔드 호출 | `true` |
+| `VITE_USE_MOCK` | `true` 면 모든 API 호출이 Mock 어댑터로 라우팅. `false` 면 실제 백엔드 호출 | `false` |
 | `VITE_AUTH_HEADER_NAME` | 토큰 첨부 헤더 이름 | `Authorization` |
 
 ## Mock ↔ 실제 모드 전환
 
-- `.env` 에서 `VITE_USE_MOCK=false` 로 변경 + `VITE_API_BASE_URL` 을 실제 API Gateway URL로 설정 → `npm run dev` 재시작
+- 실제 백엔드 사용: `.env`에서 `VITE_USE_MOCK=false`, `VITE_API_BASE_URL=http://localhost:3000` 설정 후 `npm.cmd run dev` 재시작
+- Mock 사용: `.env`에서 `VITE_USE_MOCK=true` 설정 후 `npm.cmd run dev` 재시작
 - Mock 데이터는 `localStorage` 에 영속화. 헤더의 **[Mock 초기화]** 버튼으로 시드값 리셋
 
-## 테스트 계정 (Mock 모드, 비밀번호는 모두 `password`)
+## 데모 계정
+
+실제 백엔드에서는 먼저 `backend` 폴더에서 `npm.cmd run prisma:seed`를 실행합니다. Mock 모드와 실제 백엔드 모두 비밀번호는 `password`입니다.
 
 | 역할 | 이메일 |
 |---|---|
-| 분실자 | `lost1@kookmin.ac.kr` |
-| 습득자 | `find1@kookmin.ac.kr` |
+| 일반사용자 | `user1@kookmin.ac.kr` |
 | 보관소 관리자 | `manager@kookmin.ac.kr` |
+| 승인 대기 관리자 | `manager.pending@kookmin.ac.kr` |
 | 운영 관리자 | `admin@kookmin.ac.kr` |
-| 분실+습득 겸직 | `both@kookmin.ac.kr` |
 
 ## API 명세
 
@@ -50,16 +53,16 @@ npm run dev
 npm run build      # dist/ 폴더 생성
 ```
 
-`dist/` 폴더의 정적 산출물을 S3 정적 호스팅 버킷에 업로드하거나 CloudFront에 연결하세요.
+`dist/` 폴더의 정적 산출물은 단일 EC2 배포 구성에서 백엔드와 함께 서비스할 수 있습니다.
 
 ## 백엔드 연동 체크리스트
 
-- [ ] `VITE_API_BASE_URL` 을 API Gateway URL로 설정
-- [ ] `VITE_USE_MOCK=false` 로 변경
-- [ ] CORS 설정 (백엔드)
-- [ ] 인증 토큰 발급 엔드포인트 호환성 확인 (`POST /auth/login` 응답에 `{ token, user }` 포함)
-- [ ] 알림 발송 로직 (SNS 등) 구현 확인 — 프론트는 `/notifications` 엔드포인트만 사용
-- [ ] 이미지 업로드 엔드포인트 (`POST /uploads/image`, multipart) 또는 presigned URL 방식 결정. 프론트는 `uploadImage()` 함수의 시그니처만 유지하면 됨.
+- [x] `VITE_API_BASE_URL` 을 로컬 백엔드 주소로 설정
+- [x] `VITE_USE_MOCK=false` 로 전환 가능
+- [x] CORS 설정
+- [x] 인증 토큰 발급 엔드포인트 연결 (`POST /auth/login`)
+- [x] 알림 API 연결 (`/notifications`)
+- [x] 이미지 업로드 API 연결 (`POST /uploads/image`)
 
 ## 디렉토리 구조
 

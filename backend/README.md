@@ -66,6 +66,15 @@ npm.cmd run prisma:seed
 npm.cmd run dev
 ```
 
+`prisma:seed`를 실행하면 화면 확인용 계정이 생성됩니다. 비밀번호는 모두 `password`입니다.
+
+```text
+일반사용자: user1@kookmin.ac.kr
+보관소 관리자: manager@kookmin.ac.kr
+승인 대기 관리자: manager.pending@kookmin.ac.kr
+운영 관리자: admin@kookmin.ac.kr
+```
+
 확인 주소:
 
 ```text
@@ -132,7 +141,7 @@ npm.cmd run build            # 백엔드 빌드
 npm.cmd run prisma:generate  # Prisma Client 생성
 npm.cmd run prisma:migrate   # DB 마이그레이션 생성/적용
 npm.cmd run prisma:deploy    # 이미 만든 마이그레이션 적용
-npm.cmd run prisma:seed      # 기본 설정값/초기 관리자 seed
+npm.cmd run prisma:seed      # 기본 설정값/데모 계정 생성
 ```
 
 ## 포트
