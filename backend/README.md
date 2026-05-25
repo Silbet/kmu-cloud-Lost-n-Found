@@ -70,10 +70,26 @@ npm.cmd run dev
 
 ```text
 일반사용자: user1@kookmin.ac.kr
+일반사용자: user2@kookmin.ac.kr
+일반사용자: user3@kookmin.ac.kr
+일반사용자: user4@kookmin.ac.kr
 보관소 관리자: manager@kookmin.ac.kr
 승인 대기 관리자: manager.pending@kookmin.ac.kr
 운영 관리자: admin@kookmin.ac.kr
 ```
+
+데모 계정으로 바로 확인할 수 있는 흐름:
+
+```text
+user1 김민준: 검정 카드지갑 매칭 후보 확인 요청
+user2 이서연: 빨간 체크 머플러 후보 없음, 남색 접이식 우산 완료 이력
+user3 박지호: 하늘색 텀블러 확인 요청 진행 중
+user4 최수아: 흰색 무선 이어폰 발급된 수령 코드 확인
+보관소 관리자: 보관 위치 입력 전 습득물, 확인 요청 승인/반려, 수령 완료 처리, 폐기 예정 물품
+운영 관리자: 상태별 통계와 목록 조회
+```
+
+`prisma:seed`를 다시 실행하면 위 고정 데모 흐름은 초기 상태로 복구됩니다.
 
 확인 주소:
 
