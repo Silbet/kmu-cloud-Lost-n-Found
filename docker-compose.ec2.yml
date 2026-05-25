@@ -4,15 +4,13 @@ services:
     container_name: lost-found-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: lost_found
-      POSTGRES_USER: lost_found_user
-      POSTGRES_PASSWORD: lost_found_password
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lost_found_user -d lost_found"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,13 +25,13 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://lost_found_user:lost_found_password@postgres:5432/lost_found?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       PORT: 3000
-      JWT_SECRET: dev-secret-change-me
+      JWT_SECRET: ${JWT_SECRET}
       UPLOAD_DIR: ./uploads
       WEB_DIR: ./public
     ports:
-      - "3000:3000"
+      - "80:3000"
     volumes:
       - backend_uploads:/app/uploads
 
