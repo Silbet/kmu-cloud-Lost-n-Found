@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lost-found-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lost_found
+      POSTGRES_USER: lost_found_user
+      POSTGRES_PASSWORD: lost_found_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lost_found_user -d lost_found"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: lost-found-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://lost_found_user:lost_found_password@postgres:5432/lost_found?schema=public
+      PORT: 3000
+      JWT_SECRET: dev-secret-change-me
+      UPLOAD_DIR: ./uploads
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_uploads:/app/uploads
+
+volumes:
+  postgres_data:
+  backend_uploads:

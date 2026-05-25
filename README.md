@@ -9,6 +9,7 @@
 ```text
 .
 ├── docs/   # 기획 문서, 수정사항 정리, API 명세, 이벤트 스토밍 자료
+├── backend/ # NestJS 기반 백엔드 API 서버
 └── web/    # React 기반 웹 프론트엔드
 ```
 
@@ -22,6 +23,10 @@ npm install
 cp .env.example .env
 npm run dev
 ```
+
+## 백엔드
+
+백엔드 실행 방법은 [backend/README.md](backend/README.md)를 참고하세요.
 
 ## 문서
 
