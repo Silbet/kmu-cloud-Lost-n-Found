@@ -57,9 +57,9 @@ export function LoginPage() {
           계정이 없으신가요? <Link to="/signup" className="text-blue-600 hover:underline">회원가입</Link>
         </p>
         <div className="mt-4 text-xs text-gray-500 border-t pt-3">
-          <p className="font-medium">테스트 계정 (Mock, 비밀번호 모두 password)</p>
+          <p className="font-medium">데모 계정 (비밀번호 모두 password)</p>
           <ul className="mt-1 space-y-0.5">
-            <li>일반사용자: user1@kookmin.ac.kr</li>
+            <li>일반사용자: user1~4@kookmin.ac.kr</li>
             <li>보관소 관리자: manager@kookmin.ac.kr</li>
             <li>승인 대기 관리자: manager.pending@kookmin.ac.kr</li>
             <li>운영 관리자: admin@kookmin.ac.kr</li>
