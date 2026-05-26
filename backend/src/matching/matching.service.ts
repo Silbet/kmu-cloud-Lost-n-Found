@@ -39,6 +39,7 @@ export class MatchingService {
     });
 
     for (const item of candidates) {
+      if (!this.itemNameMatches(report.itemName, item.itemName)) continue;
       if (!this.placeMatches(report.lostPlace, item.foundPlace)) continue;
       await this.prisma.match.upsert({
         where: {
@@ -108,6 +109,7 @@ export class MatchingService {
     });
 
     for (const report of reports) {
+      if (!this.itemNameMatches(report.itemName, item.itemName)) continue;
       if (!this.placeMatches(report.lostPlace, item.foundPlace)) continue;
       await this.prisma.match.upsert({
         where: {
@@ -141,5 +143,13 @@ export class MatchingService {
 
   private placeMatches(a: string, b: string) {
     return a.includes(b) || b.includes(a);
+  }
+
+  private itemNameMatches(a: string, b: string) {
+    return this.normalize(a).includes(this.normalize(b)) || this.normalize(b).includes(this.normalize(a));
+  }
+
+  private normalize(value: string) {
+    return value.replace(/\s+/g, '').toLowerCase();
   }
 }
