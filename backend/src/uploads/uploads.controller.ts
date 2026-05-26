@@ -1,9 +1,8 @@
-import { Controller, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { mkdirSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('uploads')
@@ -25,9 +24,9 @@ export class UploadsController {
       }),
     }),
   )
-  uploadImage(@UploadedFile() file: Express.Multer.File, @Req() request: Request) {
+  uploadImage(@UploadedFile() file: Express.Multer.File) {
     return {
-      imageUrl: `${request.protocol}://${request.get('host')}/uploads/${file.filename}`,
+      imageUrl: `/uploads/${file.filename}`,
     };
   }
 }
