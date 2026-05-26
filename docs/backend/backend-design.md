@@ -393,12 +393,12 @@ PATCH /manager/items/:itemId/disposal
 ### 6.10 Uploads
 
 ```text
-POST /uploads/image
+POST /api/uploads/image
 ```
 
 정책:
 
-- 기본 구현은 EC2 로컬 파일 저장 후 imageUrl 반환
+- 기본 구현은 EC2 로컬 파일 저장 후 `/uploads/파일명` 형태의 상대경로 imageUrl 반환
 - 필요 시 S3 또는 presigned URL 방식으로 변경 가능
 
 ## 7. 자동 처리 작업
