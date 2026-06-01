@@ -1,31 +1,31 @@
-# V2 AWS Manual Setup Guide
+# V2 AWS 수동 구성 가이드
 
-This guide lists the AWS resources that must be created manually for V2. The repository only contains application code, Lambda handlers, environment variable examples, and setup documentation.
+이 문서는 V2 실행에 필요한 AWS 리소스를 콘솔에서 직접 생성할 때 따라갈 수 있는 가이드다. 저장소에는 애플리케이션 코드, Lambda 핸들러, 환경변수 예시, 설정 문서만 포함한다.
 
-## 1. Region And Naming
+## 1. 리전과 이름 규칙
 
-- Region: `us-east-1`
-- Naming pattern: `pj-kmucloud-6-v2-{name}`
+- 리전: `us-east-1`
+- 이름 규칙: `pj-kmucloud-6-v2-{명칭}`
 
-Use the same prefix for every manually created resource so the architecture is easy to explain and inspect.
+모든 리소스에 같은 접두어를 사용하면 발표와 점검 시 어떤 리소스가 V2에 속하는지 쉽게 설명할 수 있다.
 
 ## 2. RDS PostgreSQL
 
-Create an RDS PostgreSQL database:
+RDS PostgreSQL 데이터베이스를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-rds`
-- Engine: PostgreSQL
-- Database name: `lost_found`
-- Public access: disabled unless temporary setup requires otherwise
-- Backup: enabled
+- 이름: `pj-kmucloud-6-v2-rds`
+- 엔진: PostgreSQL
+- 데이터베이스 이름: `lost_found`
+- 퍼블릭 액세스: 기본적으로 비활성화
+- 백업: 활성화
 
-Backend environment:
+백엔드 환경변수:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@RDS_ENDPOINT:5432/lost_found?schema=public"
 ```
 
-After the database is reachable from the backend or Lambda network:
+백엔드 또는 Lambda 네트워크에서 RDS에 접근할 수 있게 된 뒤 마이그레이션과 시드를 적용한다.
 
 ```powershell
 cd v2/backend
@@ -33,14 +33,14 @@ npm.cmd run prisma:deploy
 npm.cmd run prisma:seed
 ```
 
-## 3. Image S3 Bucket
+## 3. 이미지 S3 버킷
 
-Create an S3 bucket:
+이미지 저장용 S3 버킷을 생성한다.
 
-- Name: `pj-kmucloud-6-v2-images`
-- Purpose: original upload images and generated thumbnails
+- 이름: `pj-kmucloud-6-v2-images`
+- 목적: 원본 업로드 이미지와 생성된 썸네일 저장
 
-Backend environment:
+백엔드 환경변수:
 
 ```env
 AWS_REGION="us-east-1"
@@ -48,28 +48,28 @@ S3_IMAGE_BUCKET="pj-kmucloud-6-v2-images"
 PRESIGNED_UPLOAD_EXPIRES_SECONDS="300"
 ```
 
-If images are served through CloudFront later:
+이미지를 CloudFront로 제공하게 되면 아래 값을 추가한다.
 
 ```env
 S3_IMAGE_PUBLIC_BASE_URL="https://IMAGE_CLOUDFRONT_DOMAIN"
 ```
 
-Add CORS for browser direct uploads. Include the deployed frontend origin after CloudFront is ready.
+브라우저 직접 업로드를 위해 S3 CORS를 설정한다. CloudFront 배포 후에는 실제 프론트엔드 도메인도 허용 origin에 추가한다.
 
-## 4. Frontend S3 And CloudFront
+## 4. 프론트엔드 S3와 CloudFront
 
-Create an S3 bucket:
+프론트엔드 정적 파일용 S3 버킷을 생성한다.
 
-- Name: `pj-kmucloud-6-v2-frontend`
-- Purpose: React build output
+- 이름: `pj-kmucloud-6-v2-frontend`
+- 목적: React 빌드 결과물 저장
 
-Create a CloudFront distribution:
+CloudFront 배포를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-frontend-cdn`
-- Origin: frontend S3 bucket
-- SPA fallback: route 403/404 to `/index.html`
+- 이름: `pj-kmucloud-6-v2-frontend-cdn`
+- Origin: 프론트엔드 S3 버킷
+- SPA fallback: 403/404 응답을 `/index.html`로 연결
 
-Build and upload frontend artifacts after setting the API base URL:
+API 기본 URL을 설정한 뒤 프론트엔드를 빌드한다.
 
 ```powershell
 cd v2/web
@@ -77,11 +77,11 @@ npm.cmd install
 npm.cmd run build
 ```
 
-Upload the generated build output to `pj-kmucloud-6-v2-frontend`.
+생성된 빌드 결과물을 `pj-kmucloud-6-v2-frontend` 버킷에 업로드한다.
 
-## 5. API Gateway And API Lambda
+## 5. API Gateway와 API Lambda
 
-Build backend:
+백엔드를 빌드한다.
 
 ```powershell
 cd v2/backend
@@ -89,19 +89,19 @@ npm.cmd install
 npm.cmd run build
 ```
 
-Create a Lambda:
+Lambda를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-api-handler`
+- 이름: `pj-kmucloud-6-v2-api-handler`
 - Handler: `dist/src/lambda/api.handler.handler`
-- Runtime: Node.js 22 or compatible Node.js runtime
+- Runtime: Node.js 22 또는 호환 가능한 Node.js 런타임
 
-Create an API Gateway:
+API Gateway를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-api`
+- 이름: `pj-kmucloud-6-v2-api`
 - Integration: API Lambda
-- Route all API requests to the Lambda handler
+- 라우팅: 모든 API 요청을 API Lambda로 전달
 
-Required environment variables:
+필수 환경변수:
 
 ```env
 AWS_REGION="us-east-1"
@@ -110,7 +110,7 @@ JWT_SECRET="replace-with-a-long-random-jwt-secret"
 S3_IMAGE_BUCKET="pj-kmucloud-6-v2-images"
 ```
 
-Optional, when each feature is enabled:
+기능을 켤 때 추가하는 선택 환경변수:
 
 ```env
 MATCHING_MODE="queue"
@@ -119,29 +119,29 @@ NOTIFICATION_PUBLISH_MODE="sns"
 SNS_NOTIFICATION_TOPIC_ARN="arn:aws:sns:us-east-1:{account-id}:pj-kmucloud-6-v2-notification-topic"
 ```
 
-## 6. SQS Matching Worker
+## 6. SQS 매칭 워커
 
-Create an SQS queue:
+SQS 큐를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-matching-queue`
+- 이름: `pj-kmucloud-6-v2-matching-queue`
 
-Create a Lambda:
+Lambda를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-matching-worker`
+- 이름: `pj-kmucloud-6-v2-matching-worker`
 - Handler: `dist/src/lambda/matching-worker.handler.handler`
 - Trigger: SQS queue
 
-This worker consumes matching jobs and calls the existing matching service logic.
+이 워커는 매칭 작업 메시지를 소비하고 기존 매칭 서비스 로직을 호출한다.
 
-## 7. Thumbnail Worker
+## 7. 썸네일 워커
 
-Create a Lambda:
+Lambda를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-thumbnail-worker`
+- 이름: `pj-kmucloud-6-v2-thumbnail-worker`
 - Handler: `dist/src/lambda/thumbnail-worker.handler.handler`
-- Trigger: S3 object-created event from `pj-kmucloud-6-v2-images`
+- Trigger: `pj-kmucloud-6-v2-images` 버킷의 S3 object-created 이벤트
 
-Environment variables:
+환경변수:
 
 ```env
 AWS_REGION="us-east-1"
@@ -149,43 +149,43 @@ THUMBNAIL_PREFIX="thumbnails"
 THUMBNAIL_WIDTH="480"
 ```
 
-The worker writes generated thumbnails to:
+워커는 생성된 썸네일을 아래 경로에 저장한다.
 
 ```text
-thumbnails/{original-key}.webp
+thumbnails/{원본-key}.webp
 ```
 
-## 8. SNS Notification Topic
+## 8. SNS 알림 토픽
 
-Create an SNS topic:
+SNS 토픽을 생성한다.
 
-- Name: `pj-kmucloud-6-v2-notification-topic`
+- 이름: `pj-kmucloud-6-v2-notification-topic`
 
-Backend environment:
+백엔드 환경변수:
 
 ```env
 NOTIFICATION_PUBLISH_MODE="sns"
 SNS_NOTIFICATION_TOPIC_ARN="arn:aws:sns:us-east-1:{account-id}:pj-kmucloud-6-v2-notification-topic"
 ```
 
-Actual email, SMS, or push subscriptions should be added only after notification consent and cost policy are confirmed.
+실제 이메일, SMS, 푸시 구독은 알림 수신 동의와 비용 정책을 확정한 뒤 추가한다.
 
-## 9. Scheduled Jobs
+## 9. 자동 실행 작업
 
-Create a Lambda:
+Lambda를 생성한다.
 
-- Name: `pj-kmucloud-6-v2-scheduled-jobs`
+- 이름: `pj-kmucloud-6-v2-scheduled-jobs`
 - Handler: `dist/src/lambda/scheduled-jobs.handler.handler`
 
-Create EventBridge Scheduler rules after automatic cancellation or disposal policies are finalized. This handler is currently a ready-to-wire placeholder.
+자동 취소, 자동 폐기 같은 정책이 확정된 뒤 EventBridge Scheduler 규칙을 생성한다. 현재 핸들러는 나중에 연결할 수 있도록 준비된 골격이다.
 
-## 10. IAM Checklist
+## 10. IAM 체크리스트
 
-Give each Lambda only the permissions it needs:
+각 Lambda에는 필요한 권한만 부여한다.
 
-- API Lambda: RDS network access, S3 presigned upload permissions, optional SQS send, optional SNS publish
-- Matching worker: SQS consume, RDS access
-- Thumbnail worker: S3 get original object, S3 put thumbnail object
-- Scheduled jobs: RDS access and any service permissions required by future policies
+- API Lambda: RDS 네트워크 접근, S3 Presigned Upload 권한, 선택적으로 SQS send, SNS publish
+- 매칭 워커: SQS consume, RDS 접근
+- 썸네일 워커: S3 원본 객체 읽기, S3 썸네일 객체 쓰기
+- 자동 실행 작업: RDS 접근과 향후 정책에 필요한 서비스 권한
 
-Avoid committing credentials. Use Lambda environment variables and AWS-managed secrets where possible.
+Credential은 커밋하지 않는다. 가능한 Lambda 환경변수와 AWS 관리형 secret을 사용한다.
