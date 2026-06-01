@@ -27,3 +27,48 @@ V2 uses AWS managed services, but this repository does not create AWS resources 
 ## Environment Variables
 
 The backend uses `.env.example` as the source of required configuration names. Local development can keep using Docker PostgreSQL. Deployed environments should replace `DATABASE_URL` with the RDS PostgreSQL connection string and set AWS resource identifiers after the resources are created.
+
+## S3 Image Upload Flow
+
+The V2 backend exposes `POST /api/uploads/image/presigned-url`.
+
+Request body:
+
+```json
+{
+  "filename": "wallet.jpg",
+  "contentType": "image/jpeg",
+  "purpose": "found-items"
+}
+```
+
+Response:
+
+```json
+{
+  "uploadUrl": "https://...",
+  "objectKey": "uploads/found-items/2026-06-02/uuid.jpg",
+  "imageUrl": "s3://pj-kmucloud-6-v2-images/uploads/found-items/2026-06-02/uuid.jpg",
+  "method": "PUT",
+  "expiresIn": 300,
+  "headers": {
+    "Content-Type": "image/jpeg"
+  }
+}
+```
+
+The browser uploads the file directly to S3 with `PUT uploadUrl`. After upload, the app stores `imageUrl` or `objectKey` with the item/report data.
+
+Recommended S3 CORS rule for local development and deployed frontend domains:
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedOrigins": ["http://localhost:5273"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```

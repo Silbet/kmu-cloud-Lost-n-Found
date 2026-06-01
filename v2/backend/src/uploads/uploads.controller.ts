@@ -1,13 +1,22 @@
-import { Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { mkdirSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreatePresignedUploadDto } from './dto/create-presigned-upload.dto';
+import { S3ImageStorageService } from './s3-image-storage.service';
 
 @Controller('uploads')
 @UseGuards(JwtAuthGuard)
 export class UploadsController {
+  constructor(private readonly s3ImageStorage: S3ImageStorageService) {}
+
+  @Post('image/presigned-url')
+  createPresignedImageUpload(@Body() dto: CreatePresignedUploadDto) {
+    return this.s3ImageStorage.createPresignedUpload(dto);
+  }
+
   @Post('image')
   @UseInterceptors(
     FileInterceptor('file', {
