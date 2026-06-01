@@ -1,45 +1,35 @@
-# 국민대 분실물 보관소
+# AWS Cloud Computing Project
 
-국민대학교 캠퍼스 내 분실물 신고 및 보관소 연동 시스템 저장소입니다.
+이 저장소는 동일한 프로젝트를 두 개의 제출 버전으로 관리합니다.
 
-React 프론트엔드와 NestJS 백엔드, PostgreSQL DB가 구성되어 있습니다. 로컬에서는 PostgreSQL만 Docker로 실행하고 프론트엔드와 백엔드는 개발 서버로 실행합니다. EC2 배포에서는 Docker로 PostgreSQL과 백엔드를 실행하고, 백엔드가 빌드된 프론트 화면까지 함께 제공합니다.
-
-## 디렉토리 구조
+## 버전 구조
 
 ```text
 .
-├── docs/   # 기획 문서, 수정사항 정리, API 명세, 이벤트 스토밍 자료
-├── backend/ # NestJS 기반 백엔드 API 서버
-└── web/    # React 기반 웹 프론트엔드
+├── v1/ # 기존 구현 버전
+└── v2/ # v1을 기반으로 아키텍처를 개선할 버전
 ```
 
-## 웹 프론트엔드
+## v1
 
-웹 앱 실행과 환경변수 설정은 [web/README.md](web/README.md)를 참고하세요.
+현재까지 구현된 기존 프로젝트입니다.
 
-```bash
-cd web
-npm.cmd install
-Copy-Item .env.example .env
-npm.cmd run dev
-```
+- 상세 설명: [v1/README.md](v1/README.md)
+- 프론트엔드: [v1/web](v1/web)
+- 백엔드: [v1/backend](v1/backend)
+- 문서: [v1/docs](v1/docs)
 
-## 백엔드
+## v2
 
-백엔드 실행 방법은 [backend/README.md](backend/README.md)를 참고하세요.
+v1 내용을 그대로 복제한 상태에서 시작하는 개선 버전입니다. 이후 아키텍처 개선 작업은 `v2/` 내부에서 진행합니다.
 
-## EC2 배포
+- 상세 설명: [v2/README.md](v2/README.md)
+- 프론트엔드: [v2/web](v2/web)
+- 백엔드: [v2/backend](v2/backend)
+- 문서: [v2/docs](v2/docs)
 
-EC2 한 대에서 아래 두 컨테이너만 실행합니다.
+## 작업 원칙
 
-```text
-lost-found-backend  # NestJS API + React 빌드 화면 + 업로드 이미지
-lost-found-postgres # PostgreSQL DB
-```
-
-EC2에서 사용할 실행 순서는 [backend/README.md](backend/README.md)의 `EC2 배포 실행`을 참고하세요.
-
-## 문서
-
-- [API 명세](docs/api-spec.md)
-- [이벤트 스토밍 이미지](docs/event_storming.png)
+- v1 수정은 `v1/` 내부에서만 진행합니다.
+- v2 개선 작업은 `v2/` 내부에서만 진행합니다.
+- 공통 저장소 설정이 필요한 경우에만 루트 파일을 수정합니다.

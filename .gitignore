@@ -1,12 +1,12 @@
 node_modules/
 dist/
 build/
-backend/uploads/
+**/backend/uploads/
 
 .env
 .env.*
-!.env.example
-!.env.ec2.example
+!**/.env.example
+!**/.env.ec2.example
 
 .DS_Store
 Thumbs.db
