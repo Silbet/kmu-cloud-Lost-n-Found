@@ -2,11 +2,15 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { FoundItemStatus, LostReportStatus, MatchStatus, PickupStatus } from '@prisma/client';
 import { ApiError } from '../common/api-error';
 import { toFoundItem, toMatch } from '../common/mappers';
+import { NotificationPublisherService } from '../notifications/notification-publisher.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MatchesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationPublisher: NotificationPublisherService,
+  ) {}
 
   async listForReport(reportId: string) {
     const matches = await this.prisma.match.findMany({
@@ -66,7 +70,7 @@ export class MatchesService {
     const autoCancelAt = new Date(now);
     autoCancelAt.setDate(autoCancelAt.getDate() + config.pickupAutoCancelDays);
 
-    const updated = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const approved = await tx.match.update({
         where: { id: matchId },
         data: { status: MatchStatus.APPROVED, reviewedAt: now },
@@ -92,7 +96,7 @@ export class MatchesService {
       });
       const report = await tx.lostReport.findUnique({ where: { id: match.reportId } });
       if (report) {
-        await tx.notification.create({
+        const notification = await tx.notification.create({
           data: {
             userId: report.reporterId,
             type: '확인요청승인',
@@ -101,11 +105,16 @@ export class MatchesService {
             link: `/reports/${report.id}`,
           },
         });
+        return { approved, notification };
       }
-      return approved;
+      return { approved, notification: undefined };
     });
 
-    return toMatch(updated);
+    if (result.notification) {
+      await this.notificationPublisher.publish(result.notification);
+    }
+
+    return toMatch(result.approved);
   }
 
   async reject(matchId: string, reason?: string) {

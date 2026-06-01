@@ -73,6 +73,23 @@ SQS_MATCHING_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/{account-id}/pj-kmuc
 
 When queue mode is enabled, report and stored-item changes enqueue a matching job instead of running the matching algorithm inside the user request. A separate matching worker Lambda consumes the queue and calls the same matching service logic.
 
+## SNS Notification Publishing
+
+In-app notifications remain the default behavior:
+
+```env
+NOTIFICATION_PUBLISH_MODE="in-app"
+```
+
+After creating the SNS topic, deployed V2 can also publish notification events to SNS:
+
+```env
+NOTIFICATION_PUBLISH_MODE="sns"
+SNS_NOTIFICATION_TOPIC_ARN="arn:aws:sns:us-east-1:{account-id}:pj-kmucloud-6-v2-notification-topic"
+```
+
+The first SNS integration publishes structured notification events. Actual email, SMS, or push subscriptions should be added later after cost, consent, and personal information handling are confirmed.
+
 ## S3 Image Upload Flow
 
 The V2 backend exposes `POST /api/uploads/image/presigned-url`.
