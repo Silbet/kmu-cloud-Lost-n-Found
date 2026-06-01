@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 import { getAwsRegion, requiredEnv } from '../config/cloud.config';
 
@@ -12,6 +12,7 @@ interface NotificationPublishInput {
 
 @Injectable()
 export class NotificationPublisherService {
+  private readonly logger = new Logger(NotificationPublisherService.name);
   private readonly sns = new SNSClient({ region: getAwsRegion() });
 
   async publish(notification: NotificationPublishInput) {
@@ -19,23 +20,32 @@ export class NotificationPublisherService {
       return { mode: 'in-app' };
     }
 
-    await this.sns.send(
-      new PublishCommand({
-        TopicArn: requiredEnv('SNS_NOTIFICATION_TOPIC_ARN'),
-        Subject: notification.title.slice(0, 100),
-        Message: JSON.stringify(notification),
-        MessageAttributes: {
-          type: {
-            DataType: 'String',
-            StringValue: notification.type,
+    try {
+      await this.sns.send(
+        new PublishCommand({
+          TopicArn: requiredEnv('SNS_NOTIFICATION_TOPIC_ARN'),
+          Subject: notification.title.slice(0, 100),
+          Message: JSON.stringify(notification),
+          MessageAttributes: {
+            type: {
+              DataType: 'String',
+              StringValue: notification.type,
+            },
+            userId: {
+              DataType: 'String',
+              StringValue: notification.userId,
+            },
           },
-          userId: {
-            DataType: 'String',
-            StringValue: notification.userId,
-          },
-        },
-      }),
-    );
+        }),
+      );
+    } catch (error) {
+      this.logger.warn(
+        `SNS notification publish failed for user ${notification.userId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return { mode: 'sns-failed' };
+    }
 
     return { mode: 'sns' };
   }
