@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MANAGER
+  ADMIN
+}
+
+enum LostReportStatus {
+  RECEIVED
+  MATCH_CANDIDATE
+  FOUND
+  CLOSED
+}
+
+enum FoundItemStatus {
+  REGISTERED
+  STORED
+  PICKUP_WAITING
+  PICKUP_COMPLETED
+  DISPOSAL_PENDING
+}
+
+enum MatchStatus {
+  ACTIVE
+  CONFIRM_REQUESTED
+  APPROVED
+  REJECTED
+  INACTIVE
+}
+
+enum PickupStatus {
+  WAITING
+  COMPLETED
+  CANCELLED
+}
+
+enum PickupCancelReason {
+  REPORTER_CANCELLED
+  MANAGER_CANCELLED
+  SYSTEM_AUTO_CANCELLED
+}
+
+model User {
+  id              String         @id @default(uuid()) @db.Uuid
+  email           String         @unique
+  passwordHash    String         @map("password_hash")
+  name            String
+  contact         String
+  role            UserRole
+  pendingApproval Boolean        @default(false) @map("pending_approval")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  foundItems      FoundItem[]    @relation("FinderItems")
+  lostReports     LostReport[]   @relation("ReporterReports")
+  notifications   Notification[]
+  verifiedPickups Pickup[]       @relation("PickupVerifier")
+
+  @@map("users")
+}
+
+model LostReport {
+  id              String           @id @default(uuid()) @db.Uuid
+  reporterId      String           @map("reporter_id") @db.Uuid
+  reporterName    String           @map("reporter_name")
+  reporterContact String           @map("reporter_contact")
+  itemName        String           @map("item_name")
+  category        String
+  lostPlace       String           @map("lost_place")
+  lostAt          DateTime         @map("lost_at")
+  description     String
+  status          LostReportStatus @default(RECEIVED)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  reporter        User             @relation("ReporterReports", fields: [reporterId], references: [id])
+  matches         Match[]
+  pickups         Pickup[]
+
+  @@index([reporterId, createdAt])
+  @@index([status, createdAt])
+  @@index([category, lostAt])
+  @@map("lost_reports")
+}
+
+model FoundItem {
+  id              String          @id @default(uuid()) @db.Uuid
+  finderId        String?         @map("finder_id") @db.Uuid
+  finderName      String?         @map("finder_name")
+  finderContact   String?         @map("finder_contact")
+  itemName        String          @map("item_name")
+  category        String
+  foundPlace      String          @map("found_place")
+  foundAt         DateTime        @map("found_at")
+  description     String
+  imageUrl        String?         @map("image_url")
+  storageLocation String?         @map("storage_location")
+  status          FoundItemStatus @default(REGISTERED)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  finder          User?           @relation("FinderItems", fields: [finderId], references: [id])
+  matches         Match[]
+  pickups         Pickup[]
+
+  @@index([finderId, createdAt])
+  @@index([status, createdAt])
+  @@index([category, foundAt])
+  @@index([storageLocation])
+  @@map("found_items")
+}
+
+model Match {
+  id            String      @id @default(uuid()) @db.Uuid
+  reportId      String      @map("report_id") @db.Uuid
+  itemId        String      @map("item_id") @db.Uuid
+  status        MatchStatus @default(ACTIVE)
+  score         Decimal?    @db.Decimal(5, 2)
+  rejectReason  String?     @map("reject_reason")
+  requestedAt   DateTime?   @map("requested_at")
+  reviewedAt    DateTime?   @map("reviewed_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  report        LostReport  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  item          FoundItem   @relation(fields: [itemId], references: [id])
+  pickup        Pickup?
+
+  @@unique([reportId, itemId])
+  @@index([reportId, status])
+  @@index([itemId, status])
+  @@map("matches")
+}
+
+model Pickup {
+  id               String              @id @default(uuid()) @db.Uuid
+  matchId          String              @unique @map("match_id") @db.Uuid
+  reportId         String              @map("report_id") @db.Uuid
+  itemId           String              @map("item_id") @db.Uuid
+  pickupCode       String              @map("pickup_code")
+  status           PickupStatus        @default(WAITING)
+  waitingStartedAt DateTime            @map("waiting_started_at")
+  autoCancelAt     DateTime            @map("auto_cancel_at")
+  completedAt      DateTime?           @map("completed_at")
+  cancelledAt      DateTime?           @map("cancelled_at")
+  cancelReason     PickupCancelReason? @map("cancel_reason")
+  verifierId       String?             @map("verifier_id") @db.Uuid
+  match            Match               @relation(fields: [matchId], references: [id])
+  report           LostReport          @relation(fields: [reportId], references: [id])
+  item             FoundItem           @relation(fields: [itemId], references: [id])
+  verifier         User?               @relation("PickupVerifier", fields: [verifierId], references: [id])
+
+  @@index([status, autoCancelAt])
+  @@index([reportId])
+  @@index([itemId])
+  @@map("pickups")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model SystemConfig {
+  id                   Int      @id @default(1)
+  longUnclaimedDays    Int      @default(30) @map("long_unclaimed_days")
+  pickupAutoCancelDays Int      @default(3) @map("pickup_auto_cancel_days")
+  matchDateRangeDays   Int      @default(7) @map("match_date_range_days")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
+}
