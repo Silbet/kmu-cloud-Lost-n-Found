@@ -28,6 +28,34 @@ V2 uses AWS managed services, but this repository does not create AWS resources 
 
 The backend uses `.env.example` as the source of required configuration names. Local development can keep using Docker PostgreSQL. Deployed environments should replace `DATABASE_URL` with the RDS PostgreSQL connection string and set AWS resource identifiers after the resources are created.
 
+## Lambda Handlers
+
+After building the backend, these compiled handlers can be used for Lambda configuration:
+
+| Purpose | Handler |
+| --- | --- |
+| API Gateway entrypoint | `dist/src/lambda/api.handler.handler` |
+| SQS matching worker | `dist/src/lambda/matching-worker.handler.handler` |
+| S3 thumbnail worker | `dist/src/lambda/thumbnail-worker.handler.handler` |
+| EventBridge scheduled jobs | `dist/src/lambda/scheduled-jobs.handler.handler` |
+
+The API Lambda runs the existing NestJS application through API Gateway. Worker Lambdas reuse the same domain services where possible so the business rules stay in one place.
+
+## Thumbnail Generation
+
+Connect the `pj-kmucloud-6-v2-images` S3 bucket object-created event to the thumbnail worker Lambda. The worker reads uploaded originals and writes WebP thumbnails under:
+
+```text
+thumbnails/{original-key-with-webp-extension}
+```
+
+Optional environment variables:
+
+```env
+THUMBNAIL_PREFIX="thumbnails"
+THUMBNAIL_WIDTH="480"
+```
+
 ## Async Matching Flow
 
 Local development uses inline matching by default:
