@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { LostReportStatus, MatchStatus } from '@prisma/client';
 import { ApiError } from '../common/api-error';
 import { toLostReport } from '../common/mappers';
-import { MatchingService } from '../matching/matching.service';
+import { MatchingJobDispatcherService } from '../matching/matching-job-dispatcher.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
@@ -11,7 +11,7 @@ import { UpdateReportDto } from './dto/update-report.dto';
 export class ReportsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly matching: MatchingService,
+    private readonly matchingJobs: MatchingJobDispatcherService,
   ) {}
 
   async create(userId: string, dto: CreateReportDto) {
@@ -28,7 +28,7 @@ export class ReportsService {
         description: dto.description,
       },
     });
-    await this.matching.recomputeForReport(report.id);
+    await this.matchingJobs.dispatch('report', report.id);
     return this.findOne(report.id);
   }
 
@@ -80,7 +80,7 @@ export class ReportsService {
         reporterContact: dto.reporterContact,
       },
     });
-    await this.matching.recomputeForReport(reportId);
+    await this.matchingJobs.dispatch('report', reportId);
     return this.findOne(reportId);
   }
 

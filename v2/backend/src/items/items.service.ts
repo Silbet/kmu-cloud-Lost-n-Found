@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { FoundItemStatus } from '@prisma/client';
 import { ApiError } from '../common/api-error';
 import { fromFoundItemStatus, toFoundItem } from '../common/mappers';
-import { MatchingService } from '../matching/matching.service';
+import { MatchingJobDispatcherService } from '../matching/matching-job-dispatcher.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { SetStorageDto } from './dto/set-storage.dto';
@@ -11,7 +11,7 @@ import { SetStorageDto } from './dto/set-storage.dto';
 export class ItemsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly matching: MatchingService,
+    private readonly matchingJobs: MatchingJobDispatcherService,
   ) {}
 
   async create(userId: string, dto: CreateItemDto) {
@@ -64,7 +64,7 @@ export class ItemsService {
         status: FoundItemStatus.STORED,
       },
     });
-    await this.matching.recomputeForItem(item.id);
+    await this.matchingJobs.dispatch('item', item.id);
     return toFoundItem(item);
   }
 
