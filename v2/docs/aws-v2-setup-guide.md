@@ -121,9 +121,19 @@ SNS_NOTIFICATION_TOPIC_ARN="arn:aws:sns:us-east-1:{account-id}:pj-kmucloud-6-v2-
 
 ## 6. SQS 매칭 워커
 
-SQS 큐를 생성한다.
+먼저 실패 메시지를 보관할 DLQ를 생성한다.
+
+- 이름: `pj-kmucloud-6-v2-matching-dlq`
+- 목적: 매칭 작업 처리 실패가 반복된 메시지 보관
+- 메시지 보존 기간: 7일 또는 14일
+
+그 다음 메인 SQS 큐를 생성한다.
 
 - 이름: `pj-kmucloud-6-v2-matching-queue`
+- DLQ 설정: `pj-kmucloud-6-v2-matching-dlq` 연결
+- maxReceiveCount: 3 또는 5
+
+이 설정을 적용하면 매칭 워커가 같은 메시지 처리를 여러 번 실패했을 때 메시지가 메인 큐에 계속 남아 반복 실행되지 않고 DLQ로 이동한다. 운영자는 DLQ에서 실패한 신고 ID와 메시지 내용을 확인해 원인을 추적할 수 있다.
 
 Lambda를 생성한다.
 
@@ -184,7 +194,7 @@ Lambda를 생성한다.
 각 Lambda에는 필요한 권한만 부여한다.
 
 - API Lambda: RDS 네트워크 접근, S3 Presigned Upload 권한, 선택적으로 SQS send, SNS publish
-- 매칭 워커: SQS consume, RDS 접근
+- 매칭 워커: SQS consume, RDS 접근, DLQ로 이동된 메시지 확인을 위한 SQS 조회 권한
 - 썸네일 워커: S3 원본 객체 읽기, S3 썸네일 객체 쓰기
 - 자동 실행 작업: RDS 접근과 향후 정책에 필요한 서비스 권한
 
