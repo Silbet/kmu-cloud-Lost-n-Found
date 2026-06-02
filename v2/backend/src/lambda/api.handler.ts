@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import serverlessExpress from '@vendia/serverless-express';
+import { configure as serverlessExpress } from '@vendia/serverless-express';
 import { AppModule } from '../app.module';
 
 let cachedHandler: any;
