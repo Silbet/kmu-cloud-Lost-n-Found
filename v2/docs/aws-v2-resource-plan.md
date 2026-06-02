@@ -19,6 +19,7 @@
 | API 실행 환경 | Lambda | `pj-kmucloud-6-v2-api-handler` |
 | 데이터베이스 | RDS PostgreSQL | `pj-kmucloud-6-v2-rds` |
 | 매칭 작업 큐 | SQS | `pj-kmucloud-6-v2-matching-queue` |
+| 매칭 실패 보관 큐 | SQS DLQ | `pj-kmucloud-6-v2-matching-dlq` |
 | 매칭 워커 | Lambda | `pj-kmucloud-6-v2-matching-worker` |
 | 썸네일 생성 워커 | Lambda | `pj-kmucloud-6-v2-thumbnail-worker` |
 | 알림 토픽 | SNS | `pj-kmucloud-6-v2-notification-topic` |
@@ -72,6 +73,16 @@ SQS_MATCHING_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/{account-id}/pj-kmuc
 ```
 
 큐 모드가 켜져 있으면 신고 생성, 신고 수정, 습득물 보관 처리 시 사용자 요청 안에서 매칭 알고리즘을 직접 실행하지 않고 매칭 작업 메시지를 SQS에 넣는다. 별도 매칭 워커 Lambda가 큐를 소비해 같은 매칭 서비스 로직을 실행한다.
+
+매칭 작업 큐에는 실패 메시지 추적을 위해 DLQ를 연결한다.
+
+```text
+pj-kmucloud-6-v2-matching-queue
+  -> 처리 실패가 3~5회 반복되면
+pj-kmucloud-6-v2-matching-dlq
+```
+
+DLQ는 매칭 로직 오류, DB 일시 장애, 권한 또는 환경변수 설정 오류처럼 특정 메시지가 반복 실패할 때 원인을 확인하기 위한 최소 안전장치다. 초기 단계에서는 DLQ 메시지를 자동 재처리하는 기능까지 구현하지 않고, 실패한 신고 ID와 메시지 내용을 확인할 수 있도록 보관하는 역할로 둔다.
 
 ## SNS 알림 발행 흐름
 
