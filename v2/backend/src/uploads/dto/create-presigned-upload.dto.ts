@@ -5,7 +5,7 @@ const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export class CreatePresignedUploadDto {
   @IsString()
   @MaxLength(160)
-  @Matches(/^[\w.\- ]+$/)
+  @Matches(/^[^/\\]+$/)
   filename!: string;
 
   @IsIn(allowedImageTypes)

@@ -108,7 +108,7 @@ export function ReportDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {matches.map((m) => (
             <Card key={m.matchId} className={m.status === '비활성' ? 'opacity-60' : ''}>
-              {m.item.imageUrl && <img src={m.item.imageUrl} alt="" className="w-full h-32 object-cover rounded mb-2 bg-gray-100" />}
+              {m.item.thumbnailUrl && <img src={m.item.thumbnailUrl} alt="" className="w-full h-32 object-cover rounded mb-2 bg-gray-100" />}
               <div className="flex justify-between items-start">
                 <h3 className="font-medium">{m.item.itemName}</h3>
                 <StatusBadge status={m.status} />

@@ -26,7 +26,7 @@ export class S3ImageStorageService {
     return {
       uploadUrl,
       objectKey: key,
-      imageUrl: this.createImageUrl(bucket, key),
+      imageUrl: key,
       method: 'PUT',
       expiresIn,
       headers: {
@@ -39,7 +39,7 @@ export class S3ImageStorageService {
     const safePurpose = (dto.purpose || 'items').replace(/[^\w-]/g, '-').toLowerCase();
     const extension = this.extensionFor(dto);
     const date = new Date().toISOString().slice(0, 10);
-    return `uploads/${safePurpose}/${date}/${randomUUID()}${extension}`;
+    return `uploads/originals/${safePurpose}/${date}/${randomUUID()}${extension}`;
   }
 
   private extensionFor(dto: CreatePresignedUploadDto) {
@@ -48,11 +48,5 @@ export class S3ImageStorageService {
     if (dto.contentType === 'image/png') return '.png';
     if (dto.contentType === 'image/webp') return '.webp';
     return '.jpg';
-  }
-
-  private createImageUrl(bucket: string, key: string) {
-    const baseUrl = process.env.S3_IMAGE_PUBLIC_BASE_URL;
-    if (baseUrl) return `${baseUrl.replace(/\/$/, '')}/${key}`;
-    return `s3://${bucket}/${key}`;
   }
 }

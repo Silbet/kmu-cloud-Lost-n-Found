@@ -29,9 +29,14 @@ export function NewItemPage() {
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>();
 
   async function handleImage(file: File) {
     setUploading(true);
+    setPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return URL.createObjectURL(file);
+    });
     try {
       const { imageUrl } = await uploadImage(file);
       setForm((f) => ({ ...f, imageUrl }));
@@ -131,8 +136,8 @@ export function NewItemPage() {
               className="text-sm"
             />
             {uploading && <p className="text-xs text-gray-500 mt-1">업로드 중...</p>}
-            {form.imageUrl && (
-              <img src={form.imageUrl} alt="" className="mt-2 max-h-40 rounded border border-gray-200" />
+            {previewUrl && (
+              <img src={previewUrl} alt="" className="mt-2 max-h-40 rounded border border-gray-200" />
             )}
           </div>
           <Button type="submit" disabled={loading || uploading}>

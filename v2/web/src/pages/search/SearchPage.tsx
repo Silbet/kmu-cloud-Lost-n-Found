@@ -201,8 +201,8 @@ export function SearchPage() {
           {foundQ.data.map((it) => (
             <button key={it.itemId} onClick={() => setSelectedFound(it)} className="text-left w-full">
               <Card className="hover:border-blue-300 transition cursor-pointer h-full">
-                {it.imageUrl && (
-                  <img src={it.imageUrl} alt="" className="w-full h-32 object-cover rounded mb-2 bg-gray-100" />
+                {it.thumbnailUrl && (
+                  <img src={it.thumbnailUrl} alt="" className="w-full h-32 object-cover rounded mb-2 bg-gray-100" />
                 )}
                 <div className="flex justify-between items-start">
                   <h3 className="font-medium">{it.itemName}</h3>
@@ -284,8 +284,8 @@ export function SearchPage() {
       >
         {selectedFound && (
           <div className="space-y-3 text-sm">
-            {selectedFound.imageUrl && (
-              <img src={selectedFound.imageUrl} alt="" className="w-full max-h-48 object-cover rounded bg-gray-100" />
+            {selectedFound.detailImageUrl && (
+              <img src={selectedFound.detailImageUrl} alt="" className="w-full max-h-96 object-contain rounded bg-gray-100" />
             )}
             <div className="flex justify-between items-start">
               <h3 className="font-semibold text-base">{selectedFound.itemName}</h3>

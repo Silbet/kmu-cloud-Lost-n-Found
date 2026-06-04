@@ -11,6 +11,8 @@ export interface FoundItem {
   foundDate: string;
   description: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
+  detailImageUrl?: string;
   storageLocation?: string;
   status: FoundItemStatus;
   createdAt: string;

@@ -12,6 +12,7 @@ import {
   type Pickup,
   type User,
 } from '@prisma/client';
+import { createImageVariantUrls } from '../uploads/image-variants';
 
 export function toPublicRole(role: UserRole) {
   if (role === UserRole.ADMIN) return '운영관리자';
@@ -124,7 +125,7 @@ export function toFoundItem(item: FoundItem) {
     foundPlace: item.foundPlace,
     foundDate: item.foundAt.toISOString(),
     description: item.description,
-    imageUrl: item.imageUrl ?? undefined,
+    ...createImageVariantUrls(item.imageUrl),
     storageLocation: item.storageLocation ?? undefined,
     status: toFoundItemStatus(item.status),
     createdAt: item.createdAt.toISOString(),

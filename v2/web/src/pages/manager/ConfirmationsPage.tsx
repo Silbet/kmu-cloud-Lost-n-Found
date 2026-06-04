@@ -75,7 +75,7 @@ function ConfirmCard({ match, onApprove, onReject }: { match: MatchWithItem; onA
         </div>
         <div>
           <h3 className="text-sm font-semibold text-gray-500 mb-2">습득물</h3>
-          {match.item.imageUrl && <img src={match.item.imageUrl} alt="" className="w-full h-32 object-cover rounded mb-2 bg-gray-100" />}
+          {match.item.thumbnailUrl && <img src={match.item.thumbnailUrl} alt="" className="w-full h-32 object-cover rounded mb-2 bg-gray-100" />}
           <p className="font-medium">{match.item.itemName}</p>
           <p className="text-sm text-gray-600">{match.item.category} · {match.item.foundPlace}</p>
           <p className="text-xs text-gray-500">습득: {fmtDateTime(match.item.foundDate)}</p>
