@@ -1,0 +1,43 @@
+name: 버그 발견
+description: 버그를 발견했을 때 사용하는 이슈 템플릿입니다.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 재현 단계
+      description: 어떤 순서로 진행했을 때 버그가 발생했는지 작성해주세요.
+      placeholder: |
+        1. [사용자 역할]로 로그인
+        2. [버튼/메뉴/페이지]에서 [수행한 동작]
+        3. [오류가 발생한 위치]에서 문제 확인
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-result
+    attributes:
+      label: 원래 결과
+      description: 정상적으로 동작했다면 어떤 결과가 나와야 하는지 작성해주세요.
+      placeholder: 예) 버튼 클릭 시 상태가 정상적으로 변경되어야 함
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-result
+    attributes:
+      label: 실제 결과
+      description: 실제로 어떤 문제가 발생했는지 작성해주세요.
+      placeholder: 예) 상태가 변경되지 않고 우측 상단에 오류 메시지가 표시됨
+    validations:
+      required: true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 첨부 사진
+      description: 오류 화면이나 관련 이미지를 첨부해주세요. png, jpg, jpeg 등을 사용할 수 있습니다.
+      placeholder: 이 영역에 오류 화면 이미지를 드래그하거나 붙여넣어주세요.
+    validations:
+      required: false
