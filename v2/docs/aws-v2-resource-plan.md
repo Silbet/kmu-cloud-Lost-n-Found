@@ -5,25 +5,25 @@
 ## 공통 규칙
 
 - 리전: `us-east-1`
-- 리소스 이름 형식: `pj-kmucloud-6-v2-{명칭}`
+- 리소스 이름 형식: `pj-kmucloud-6-{명칭}-v2`
 - DB 비밀번호, JWT secret, AWS credential 같은 민감 정보는 커밋하지 않는다.
 
 ## 예정 리소스
 
 | 목적 | AWS 서비스 | 이름 예시 |
 | --- | --- | --- |
-| 프론트엔드 정적 파일 호스팅 | S3 | `pj-kmucloud-6-v2-frontend` |
-| 프론트엔드 CDN | CloudFront | `pj-kmucloud-6-v2-frontend-cdn` |
-| 이미지 객체 저장소 | S3 | `pj-kmucloud-6-v2-images` |
-| API 진입점 | API Gateway | `pj-kmucloud-6-v2-api` |
-| API 실행 환경 | Lambda | `pj-kmucloud-6-v2-api-handler` |
-| 데이터베이스 | RDS PostgreSQL | `pj-kmucloud-6-v2-rds` |
-| 매칭 작업 큐 | SQS | `pj-kmucloud-6-v2-matching-queue` |
-| 매칭 실패 보관 큐 | SQS DLQ | `pj-kmucloud-6-v2-matching-dlq` |
-| 매칭 워커 | Lambda | `pj-kmucloud-6-v2-matching-worker` |
-| 썸네일 생성 워커 | Lambda | `pj-kmucloud-6-v2-thumbnail-worker` |
-| 알림 토픽 | SNS | `pj-kmucloud-6-v2-notification-topic` |
-| 자동 실행 작업 | EventBridge Scheduler + Lambda | `pj-kmucloud-6-v2-scheduled-jobs` |
+| 프론트엔드 정적 파일 호스팅 | S3 | `pj-kmucloud-6-frontend-v2` |
+| 프론트엔드 CDN | CloudFront | `pj-kmucloud-6-frontend-cdn-v2` |
+| 이미지 객체 저장소 | S3 | `pj-kmucloud-6-images-v2` |
+| API 진입점 | API Gateway | `pj-kmucloud-6-api-v2` |
+| API 실행 환경 | Lambda | `pj-kmucloud-6-api-handler-v2` |
+| 데이터베이스 | RDS PostgreSQL | `pj-kmucloud-6-rds-v2` |
+| 매칭 작업 큐 | SQS | `pj-kmucloud-6-matching-queue-v2` |
+| 매칭 실패 보관 큐 | SQS DLQ | `pj-kmucloud-6-matching-dlq-v2` |
+| 매칭 워커 | Lambda | `pj-kmucloud-6-matching-worker-v2` |
+| 이미지 후처리 워커 | Lambda | `pj-kmucloud-6-thumbnail-worker-v2` |
+| 알림 토픽 | SNS | `pj-kmucloud-6-notification-topic-v2` |
+| 자동 실행 작업 | EventBridge Scheduler + Lambda | `pj-kmucloud-6-scheduled-jobs-v2` |
 
 ## 환경변수 기준
 
@@ -31,30 +31,35 @@
 
 ## Lambda 핸들러
 
-백엔드 빌드 후 아래 핸들러 경로를 Lambda 설정에 사용한다.
+소스 코드 기준 핸들러는 `v2/backend/src/lambda/*`에 있다. 실제 배포 ZIP은 각 Lambda 루트에 `index.js` 래퍼를 두므로 AWS Lambda 콘솔의 Handler 값은 모두 `index.handler`를 사용한다.
 
-| 목적 | Handler |
-| --- | --- |
-| API Gateway 진입점 | `dist/src/lambda/api.handler.handler` |
-| SQS 매칭 워커 | `dist/src/lambda/matching-worker.handler.handler` |
-| S3 썸네일 워커 | `dist/src/lambda/thumbnail-worker.handler.handler` |
-| EventBridge 자동 실행 작업 | `dist/src/lambda/scheduled-jobs.handler.handler` |
+| 목적 | 소스 핸들러 | AWS Lambda Handler |
+| --- | --- | --- |
+| API Gateway 진입점 | `dist/src/lambda/api.handler.handler` | `index.handler` |
+| SQS 매칭 워커 | `dist/src/lambda/matching-worker.handler.handler` | `index.handler` |
+| S3 이미지 후처리 워커 | `dist/src/lambda/thumbnail-worker.handler.handler` | `index.handler` |
+| EventBridge 자동 실행 작업 | `dist/src/lambda/scheduled-jobs.handler.handler` | `index.handler` |
 
 API Lambda는 기존 NestJS 애플리케이션 전체를 API Gateway 뒤에서 실행한다. 워커 Lambda는 가능한 기존 도메인 서비스를 재사용해 비즈니스 규칙이 여러 곳으로 흩어지지 않도록 한다.
 
-## 썸네일 생성 흐름
+## 이미지 후처리 흐름
 
-`pj-kmucloud-6-v2-images` 버킷의 객체 생성 이벤트를 썸네일 워커 Lambda에 연결한다. 워커는 원본 이미지를 읽고 WebP 썸네일을 아래 경로에 저장한다.
+`pj-kmucloud-6-images-v2` 버킷의 `uploads/originals/` 객체 생성 이벤트를 이미지 후처리 워커 Lambda에 연결한다. 워커는 원본 이미지를 읽고 WebP 목록용 이미지와 상세용 이미지를 아래 경로에 저장한다.
 
 ```text
-thumbnails/{원본-key의-확장자를-webp로-변경한-값}
+uploads/originals/{purpose}/{date}/{uuid}.{ext}
+  -> images/thumbnails/{purpose}/{date}/{uuid}.webp
+  -> images/details/{purpose}/{date}/{uuid}.webp
 ```
 
 선택 환경변수:
 
 ```env
-THUMBNAIL_PREFIX="thumbnails"
+ORIGINAL_PREFIX="uploads/originals"
+THUMBNAIL_PREFIX="images/thumbnails"
+DETAIL_PREFIX="images/details"
 THUMBNAIL_WIDTH="480"
+DETAIL_WIDTH="1600"
 ```
 
 ## 비동기 매칭 흐름
@@ -69,7 +74,7 @@ MATCHING_MODE="inline"
 
 ```env
 MATCHING_MODE="queue"
-SQS_MATCHING_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/{account-id}/pj-kmucloud-6-v2-matching-queue"
+SQS_MATCHING_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/{account-id}/pj-kmucloud-6-matching-queue-v2"
 ```
 
 큐 모드가 켜져 있으면 신고 생성, 신고 수정, 습득물 보관 처리 시 사용자 요청 안에서 매칭 알고리즘을 직접 실행하지 않고 매칭 작업 메시지를 SQS에 넣는다. 별도 매칭 워커 Lambda가 큐를 소비해 같은 매칭 서비스 로직을 실행한다.
@@ -77,9 +82,9 @@ SQS_MATCHING_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/{account-id}/pj-kmuc
 매칭 작업 큐에는 실패 메시지 추적을 위해 DLQ를 연결한다.
 
 ```text
-pj-kmucloud-6-v2-matching-queue
-  -> 처리 실패가 3~5회 반복되면
-pj-kmucloud-6-v2-matching-dlq
+pj-kmucloud-6-matching-queue-v2
+  -> 처리 실패가 5회 반복되면
+pj-kmucloud-6-matching-dlq-v2
 ```
 
 DLQ는 매칭 로직 오류, DB 일시 장애, 권한 또는 환경변수 설정 오류처럼 특정 메시지가 반복 실패할 때 원인을 확인하기 위한 최소 안전장치다. 초기 단계에서는 DLQ 메시지를 자동 재처리하는 기능까지 구현하지 않고, 실패한 신고 ID와 메시지 내용을 확인할 수 있도록 보관하는 역할로 둔다.
@@ -96,7 +101,7 @@ SNS 토픽 생성 후 배포 환경에서는 알림 이벤트를 SNS로도 발�
 
 ```env
 NOTIFICATION_PUBLISH_MODE="sns"
-SNS_NOTIFICATION_TOPIC_ARN="arn:aws:sns:us-east-1:{account-id}:pj-kmucloud-6-v2-notification-topic"
+SNS_NOTIFICATION_TOPIC_ARN="arn:aws:sns:us-east-1:{account-id}:pj-kmucloud-6-notification-topic-v2"
 ```
 
 현재 단계에서는 구조화된 알림 이벤트만 SNS로 발행한다. 실제 이메일, SMS, 푸시 구독은 비용, 개인정보 수신 동의, 운영 정책을 확정한 뒤 추가한다.
@@ -120,8 +125,8 @@ V2 백엔드는 `POST /api/uploads/image/presigned-url` 엔드포인트를 제�
 ```json
 {
   "uploadUrl": "https://...",
-  "objectKey": "uploads/found-items/2026-06-02/uuid.jpg",
-  "imageUrl": "s3://pj-kmucloud-6-v2-images/uploads/found-items/2026-06-02/uuid.jpg",
+  "objectKey": "uploads/originals/found-items/2026-06-02/uuid.jpg",
+  "imageUrl": "uploads/originals/found-items/2026-06-02/uuid.jpg",
   "method": "PUT",
   "expiresIn": 300,
   "headers": {
@@ -130,7 +135,7 @@ V2 백엔드는 `POST /api/uploads/image/presigned-url` 엔드포인트를 제�
 }
 ```
 
-브라우저는 `uploadUrl`로 파일을 직접 `PUT` 업로드한다. 업로드가 끝난 뒤 애플리케이션은 `imageUrl` 또는 `objectKey`를 분실물/습득물 데이터와 함께 저장한다.
+브라우저는 `uploadUrl`로 파일을 직접 `PUT` 업로드한다. 업로드가 끝난 뒤 애플리케이션은 `imageUrl` 또는 `objectKey`를 분실물/습득물 데이터와 함께 저장한다. 저장된 값은 원본 객체 키이며, 사용자 화면에 표시할 URL은 API 응답 단계에서 `S3_IMAGE_PUBLIC_BASE_URL`과 `images/thumbnails/*`, `images/details/*` 경로를 조합해 만든다.
 
 로컬 개발과 배포 프론트엔드 도메인을 위한 S3 CORS 예시는 다음과 같다.
 

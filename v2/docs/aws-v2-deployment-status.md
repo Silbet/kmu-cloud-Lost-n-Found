@@ -59,6 +59,8 @@ Galaxy S25로 촬영한 실제 사진을 사용해 테스트했다.
 
 - CloudFront 생성 후 API Lambda에 `S3_IMAGE_PUBLIC_BASE_URL` 설정
 - CloudFront 도메인을 기준으로 백엔드와 프론트엔드 새 버전 배포
+- API Lambda의 SQS 접근 경로 해결 후 `MATCHING_MODE=queue` 전환
+- API Lambda의 SNS 접근 경로 해결 후 `NOTIFICATION_PUBLISH_MODE=sns` 전환
 - SNS 실제 발행 테스트
 - 서비스 정책 확정 후 EventBridge Scheduler 연결
 
