@@ -197,7 +197,20 @@ Lambda를 생성한다.
 - 이름: `pj-kmucloud-6-scheduled-jobs-v2`
 - Handler: `index.handler`
 
-자동 취소, 자동 폐기 같은 정책이 확정된 뒤 EventBridge Scheduler 규칙을 생성한다. 현재 핸들러는 나중에 연결할 수 있도록 준비된 골격이다.
+EventBridge Scheduler를 생성한다.
+
+- 이름: `pj-kmucloud-6-scheduled-jobs-v2`
+- Target: Lambda `pj-kmucloud-6-scheduled-jobs-v2`
+- Payload:
+
+```json
+{
+  "source": "eventbridge-scheduler",
+  "job": "daily-maintenance"
+}
+```
+
+현재 핸들러는 자동 취소, 자동 폐기 같은 정책이 확정되기 전의 준비용 골격이다. 지금은 자동 실행 인프라 연결과 Lambda 호출 가능 여부를 검증하고, 실제 장기 미수령 처리나 폐기 검토 알림 로직은 서비스 정책 확정 후 구현한다.
 
 ## 10. IAM 체크리스트
 

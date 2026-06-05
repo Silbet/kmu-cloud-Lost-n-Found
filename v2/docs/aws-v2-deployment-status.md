@@ -26,6 +26,12 @@
 - SNS Topic 속성 조회 및 Topic ARN 확인
 - Scheduled Jobs Lambda 배포 ZIP 생성 및 S3 업로드
 - Scheduled Jobs Lambda 생성 및 수동 실행 테스트 성공
+- CloudFront 배포 `pj-kmucloud-6-cf`를 프론트엔드 S3와 이미지 S3에 연결
+- CloudFront 기본 도메인 `https://d3jxhrfl6v2ils.cloudfront.net` 프론트 접속 확인
+- React SPA 라우팅을 위한 403/404 -> `/index.html` fallback 확인
+- `/images/*` 경로를 이미지 S3 Origin으로 연결하고 목록용·상세용 이미지 조회 확인
+- 실제 스마트폰 사진으로 presigned URL 발급, S3 직접 업로드, 썸네일/상세 이미지 생성, CloudFront 이미지 URL 반환 확인
+- EventBridge Scheduler 생성
 
 ## 썸네일 워커 실제 사진 테스트 결과
 
@@ -57,12 +63,11 @@ Galaxy S25로 촬영한 실제 사진을 사용해 테스트했다.
 
 ## 남은 작업
 
-- CloudFront 생성 후 API Lambda에 `S3_IMAGE_PUBLIC_BASE_URL` 설정
-- CloudFront 도메인을 기준으로 백엔드와 프론트엔드 새 버전 배포
 - API Lambda의 SQS 접근 경로 해결 후 `MATCHING_MODE=queue` 전환
 - API Lambda의 SNS 접근 경로 해결 후 `NOTIFICATION_PUBLISH_MODE=sns` 전환
 - SNS 실제 발행 테스트
-- 서비스 정책 확정 후 EventBridge Scheduler 연결
+- EventBridge Scheduler의 자동 호출 로그 확인
+- 자동 취소, 폐기 검토 알림 등 실제 scheduled job 정책 확정 후 핸들러 구현
 
 ## 운영자 검토 및 요청사항
 
@@ -89,9 +94,13 @@ SNS Topic은 생성했고 속성 조회까지 확인했다.
 
 프라이빗 RDS 접근을 유지하면서 API Lambda가 SNS에도 접근할 수 있도록 필요한 네트워크 구성을 함께 검토 부탁드린다.
 
-### 3. CloudFront 구성 요청
+### 3. CloudFront 구성 완료
 
-CloudFront 배포 하나에 두 개의 S3 Origin을 연결하는 구성을 요청한다.
+CloudFront 배포 하나에 두 개의 S3 Origin을 연결했다.
+
+- CloudFront 배포: `pj-kmucloud-6-cf`
+- 배포 ID: `E1NAPAY4GOTDVW`
+- 도메인: `https://d3jxhrfl6v2ils.cloudfront.net`
 
 #### 기본 Origin
 
@@ -99,6 +108,7 @@ CloudFront 배포 하나에 두 개의 S3 Origin을 연결하는 구성을 요�
 - 경로 동작: 기본 경로 `/*`
 - 목적: React 프론트엔드 HTML, JavaScript, CSS 제공
 - SPA 라우팅을 위해 403/404 응답을 `/index.html`, HTTP 200으로 처리
+- 검증: `/`, `/search`, `/items/new` HTTP 200 확인
 
 #### 이미지 Origin
 
@@ -106,19 +116,22 @@ CloudFront 배포 하나에 두 개의 S3 Origin을 연결하는 구성을 요�
 - 경로 동작: `/images/*`
 - `/images/thumbnails/*`: 목록용 이미지
 - `/images/details/*`: 상세 화면용 이미지
+- 검증: 실제 생성된 WebP 썸네일과 상세 이미지가 CloudFront에서 HTTP 200으로 조회됨
 
-가능하다면 두 S3 버킷은 공개 접근을 차단하고 CloudFront OAC를 통해서만 읽을 수 있도록 구성한다. 이미지 버킷에서는 생성된 `/images/*` 객체만 CloudFront에서 읽을 수 있도록 하고, 원본 `/uploads/originals/*` 객체는 외부에 제공하지 않는다.
+이미지 버킷은 CloudFront 배포 `E1NAPAY4GOTDVW`가 `/images/*` 객체를 읽을 수 있도록 정책을 적용했다. 원본 `/uploads/originals/*` 객체는 사용자에게 직접 제공하지 않고, 목록용·상세용 변환 이미지만 CloudFront URL로 내려준다.
 
-### 4. EventBridge Scheduler 연결 보류
+### 4. EventBridge Scheduler 연결
 
-Scheduled Jobs Lambda는 생성했고 수동 실행 테스트까지 성공했다.
+Scheduled Jobs Lambda는 생성했고 수동 실행 테스트까지 성공했다. EventBridge Scheduler도 발표 기간 동안 실행되도록 생성했다.
 
 - Lambda 이름: `pj-kmucloud-6-scheduled-jobs-v2`
 - Runtime: `Node.js 22.x`
 - Handler: `index.handler`
 - 수동 테스트 응답: `scheduled-jobs-ready`
+- Scheduler 이름: `pj-kmucloud-6-scheduled-jobs-v2`
+- 기간: 2026-06-05 00:00부터 2026-06-10 00:00까지
 
-현재 핸들러는 자동 취소, 자동 폐기 등 정책이 확정되기 전의 준비용 골격이다. EventBridge Scheduler 연결은 서비스 정책 확정 후 진행한다.
+현재 핸들러는 자동 취소, 자동 폐기 등 정책이 확정되기 전의 준비용 골격이다. 실제 장기 미수령 처리, 폐기 검토 알림, 자동 취소 정책은 아직 코드로 구현하지 않았다. EC2 역할에는 `scheduler:GetSchedule` 권한이 없어 CLI에서 스케줄 설정 조회는 불가능했으며, Lambda 수동 호출과 로그 스트림 생성은 확인했다.
 
 ## 생성된 리소스
 
@@ -127,3 +140,4 @@ Scheduled Jobs Lambda는 생성했고 수동 실행 테스트까지 성공했다
 - Matching SQS Queue: `https://sqs.us-east-1.amazonaws.com/730335373015/pj-kmucloud-6-matching-queue-v2`
 - Scheduled Jobs Lambda: `pj-kmucloud-6-scheduled-jobs-v2`
 - Scheduled Jobs ZIP: `s3://pj-kmucloud-6-images-v2/deploy/pj-kmucloud-6-scheduled-jobs-v2.zip`
+- Frontend/Image CloudFront: `https://d3jxhrfl6v2ils.cloudfront.net`
