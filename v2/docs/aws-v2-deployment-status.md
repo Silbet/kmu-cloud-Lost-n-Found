@@ -1,6 +1,6 @@
 # V2 AWS 배포 진행 상황 및 요청사항
 
-마지막 수정일: 2026-06-04
+마지막 수정일: 2026-06-05
 
 ## 완료한 작업
 
@@ -16,6 +16,16 @@
 - 썸네일 워커 수동 S3 이벤트 테스트 성공
 - 원본 한 장에서 목록용 480px 이미지와 상세용 1600px 이미지를 함께 생성하도록 워커 변경 및 배포
 - Presigned S3 직접 업로드, 원본 객체 키 저장, 목록용·상세용 URL 분리를 위한 백엔드 및 프론트엔드 코드 수정과 빌드 확인
+- 이미지 S3 버킷 `uploads/originals/` Prefix와 썸네일 워커 Lambda 트리거 연결
+- S3 원본 업로드만으로 목록용·상세용 이미지가 자동 생성되는 것 확인
+- SNS 알림 Topic 생성
+- 매칭 워커 Lambda 생성, 코드 배포, 환경변수 설정
+- 매칭 워커 Lambda의 RDS 접근 확인
+- 매칭 SQS 큐를 매칭 워커 Lambda 트리거로 연결
+- SQS 테스트 메시지가 매칭 워커 Lambda에서 처리되는 것 확인
+- SNS Topic 속성 조회 및 Topic ARN 확인
+- Scheduled Jobs Lambda 배포 ZIP 생성 및 S3 업로드
+- Scheduled Jobs Lambda 생성 및 수동 실행 테스트 성공
 
 ## 썸네일 워커 실제 사진 테스트 결과
 
@@ -34,6 +44,7 @@ Galaxy S25로 촬영한 실제 사진을 사용해 테스트했다.
 - 최대 메모리 사용량 143MB
 - 변환된 WebP에는 촬영 기기, 촬영 시간 등 원본 EXIF 메타데이터가 포함되지 않음
 - 상세용 이미지는 1600x1200, 약 306 KB로 생성됨
+- 상세용 이미지는 원본 대비 약 90.54% 감소, 원본보다 약 10.6배 작은 파일로 생성됨
 - 목록용·상세용 이미지 동시 생성 시간 약 2.0초, 최대 메모리 사용량 172MB
 
 사진의 장면 복잡도, 노이즈, 원본 압축률에 따라 결과 크기와 처리 시간은 달라질 수 있으므로 위 결과는 대표 측정 사례로 사용한다.
@@ -46,13 +57,10 @@ Galaxy S25로 촬영한 실제 사진을 사용해 테스트했다.
 
 ## 남은 작업
 
-- 이미지 S3 버킷과 썸네일 워커 Lambda 트리거 연결
 - CloudFront 생성 후 API Lambda에 `S3_IMAGE_PUBLIC_BASE_URL` 설정
 - CloudFront 도메인을 기준으로 백엔드와 프론트엔드 새 버전 배포
-- 매칭 워커 Lambda 생성 및 SQS 트리거 연결
-- SNS 알림 토픽 생성 및 발행 테스트
-- CloudFront 구성
-- 서비스 정책 확정 후 Scheduled Jobs 연결
+- SNS 실제 발행 테스트
+- 서비스 정책 확정 후 EventBridge Scheduler 연결
 
 ## 운영자 검토 및 요청사항
 
@@ -69,9 +77,15 @@ EC2에서는 API Lambda와 동일한 `SafeRole-pj-kmucloud-6` 역할로 SQS 메�
 
 프라이빗 RDS 접근을 유지하면서 API Lambda가 SQS에도 접근할 수 있도록 필요한 네트워크 구성을 검토 부탁드린다.
 
-### 2. 매칭 워커 Lambda의 프라이빗 RDS 연결
+### 2. VPC 내부 API Lambda의 SNS 접근 가능성
 
-매칭 워커 Lambda는 SQS 메시지를 처리한 뒤 프라이빗 RDS에 매칭 결과를 저장해야 한다. 매칭 워커 Lambda 생성 후 RDS 접근을 위한 VPC 및 보안그룹 설정 검토가 필요하다.
+SNS Topic은 생성했고 속성 조회까지 확인했다.
+
+- SNS Topic: `arn:aws:sns:us-east-1:730335373015:pj-kmucloud-6-notification-topic-v2`
+
+다만 API Lambda는 프라이빗 RDS 접근을 위해 VPC 내부에 들어가 있다. 앞서 SQS 전송이 Lambda 내부에서 timeout 되었던 것처럼, SNS 발행도 같은 네트워크 문제가 발생할 수 있다. 현재 API Lambda는 안전하게 `NOTIFICATION_PUBLISH_MODE=in-app`으로 유지한다.
+
+프라이빗 RDS 접근을 유지하면서 API Lambda가 SNS에도 접근할 수 있도록 필요한 네트워크 구성을 함께 검토 부탁드린다.
 
 ### 3. CloudFront 구성 요청
 
@@ -93,14 +107,21 @@ CloudFront 배포 하나에 두 개의 S3 Origin을 연결하는 구성을 요�
 
 가능하다면 두 S3 버킷은 공개 접근을 차단하고 CloudFront OAC를 통해서만 읽을 수 있도록 구성한다. 이미지 버킷에서는 생성된 `/images/*` 객체만 CloudFront에서 읽을 수 있도록 하고, 원본 `/uploads/originals/*` 객체는 외부에 제공하지 않는다.
 
-## 학생 계정에서 직접 진행할 작업
+### 4. EventBridge Scheduler 연결 보류
 
-아래 작업은 운영자에게 바로 요청하지 않고 콘솔에서 먼저 직접 진행한다. 권한 오류가 발생할 때만 추가 요청한다.
+Scheduled Jobs Lambda는 생성했고 수동 실행 테스트까지 성공했다.
 
-- 이미지 S3 버킷에서 썸네일 워커 Lambda 트리거 연결
-  - Lambda: `pj-kmucloud-6-thumbnail-worker-v2`
-  - 이벤트: 모든 객체 생성 이벤트
-  - Prefix: `uploads/originals/`
-- 매칭 워커 Lambda 생성
-- 매칭 SQS 큐를 매칭 워커 Lambda 트리거로 연결
-- SNS Topic 생성
+- Lambda 이름: `pj-kmucloud-6-scheduled-jobs-v2`
+- Runtime: `Node.js 22.x`
+- Handler: `index.handler`
+- 수동 테스트 응답: `scheduled-jobs-ready`
+
+현재 핸들러는 자동 취소, 자동 폐기 등 정책이 확정되기 전의 준비용 골격이다. EventBridge Scheduler 연결은 서비스 정책 확정 후 진행한다.
+
+## 생성된 리소스
+
+- SNS Topic: `arn:aws:sns:us-east-1:730335373015:pj-kmucloud-6-notification-topic-v2`
+- Matching Worker Lambda: `pj-kmucloud-6-matching-worker-v2`
+- Matching SQS Queue: `https://sqs.us-east-1.amazonaws.com/730335373015/pj-kmucloud-6-matching-queue-v2`
+- Scheduled Jobs Lambda: `pj-kmucloud-6-scheduled-jobs-v2`
+- Scheduled Jobs ZIP: `s3://pj-kmucloud-6-images-v2/deploy/pj-kmucloud-6-scheduled-jobs-v2.zip`
