@@ -39,6 +39,7 @@ export class MatchingService {
     });
 
     for (const item of candidates) {
+      if (item.finderId && item.finderId === report.reporterId) continue;
       if (!this.itemNameMatches(report.itemName, item.itemName)) continue;
       if (!this.placeMatches(report.lostPlace, item.foundPlace)) continue;
       await this.prisma.match.upsert({
@@ -109,6 +110,7 @@ export class MatchingService {
     });
 
     for (const report of reports) {
+      if (item.finderId && report.reporterId === item.finderId) continue;
       if (!this.itemNameMatches(report.itemName, item.itemName)) continue;
       if (!this.placeMatches(report.lostPlace, item.foundPlace)) continue;
       await this.prisma.match.upsert({

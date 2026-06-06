@@ -33,9 +33,11 @@ export class MatchesService {
   async confirm(userId: string, matchId: string) {
     const match = await this.getMatch(matchId);
     const report = await this.prisma.lostReport.findUniqueOrThrow({ where: { id: match.reportId } });
+    const item = await this.prisma.foundItem.findUniqueOrThrow({ where: { id: match.itemId } });
     if (report.reporterId !== userId) {
       throw new ApiError(HttpStatus.FORBIDDEN, 'FORBIDDEN', '본인 신고만 확인 요청할 수 있습니다.');
     }
+    this.assertNotSelfMatch(report.reporterId, item.finderId);
     if (match.status !== MatchStatus.ACTIVE && match.status !== MatchStatus.REJECTED) {
       throw new ApiError(HttpStatus.CONFLICT, 'INVALID_STATUS', '확인 요청할 수 없는 매칭 상태입니다.');
     }
@@ -57,6 +59,9 @@ export class MatchesService {
 
   async approve(matchId: string) {
     const match = await this.getMatch(matchId);
+    const report = await this.prisma.lostReport.findUniqueOrThrow({ where: { id: match.reportId } });
+    const item = await this.prisma.foundItem.findUniqueOrThrow({ where: { id: match.itemId } });
+    this.assertNotSelfMatch(report.reporterId, item.finderId);
     if (match.status !== MatchStatus.CONFIRM_REQUESTED) {
       throw new ApiError(HttpStatus.CONFLICT, 'INVALID_STATUS', '승인할 수 없는 매칭 상태입니다.');
     }
@@ -145,6 +150,7 @@ export class MatchesService {
     if (item.status !== FoundItemStatus.STORED) {
       throw new ApiError(HttpStatus.CONFLICT, 'INVALID_STATUS', '보관중인 습득물만 요청할 수 있습니다.');
     }
+    this.assertNotSelfMatch(report.reporterId, item.finderId);
     const match = await this.prisma.match.upsert({
       where: { reportId_itemId: { reportId, itemId } },
       update: { status: MatchStatus.CONFIRM_REQUESTED, requestedAt: new Date() },
@@ -167,5 +173,11 @@ export class MatchesService {
 
   private pickupCode() {
     return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  private assertNotSelfMatch(reporterId: string, finderId?: string | null) {
+    if (finderId && finderId === reporterId) {
+      throw new ApiError(HttpStatus.CONFLICT, 'SELF_MATCH_NOT_ALLOWED', '본인이 등록한 습득물은 본인 신고와 매칭할 수 없습니다.');
+    }
   }
 }
