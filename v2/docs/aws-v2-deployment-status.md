@@ -1,6 +1,6 @@
 # V2 AWS 배포 진행 상황 및 요청사항
 
-마지막 수정일: 2026-06-05
+마지막 수정일: 2026-06-06
 
 ## 완료한 작업
 
@@ -32,6 +32,11 @@
 - `/images/*` 경로를 이미지 S3 Origin으로 연결하고 목록용·상세용 이미지 조회 확인
 - 실제 스마트폰 사진으로 presigned URL 발급, S3 직접 업로드, 썸네일/상세 이미지 생성, CloudFront 이미지 URL 반환 확인
 - EventBridge Scheduler 생성
+- 교육용 계정 네트워크 제한으로 RDS를 public access로 전환하고 API Lambda, Matching Worker Lambda의 VPC 연결 제거
+- API Lambda `MATCHING_MODE=queue`, `NOTIFICATION_PUBLISH_MODE=sns` 전환
+- API Lambda -> SQS -> Matching Worker Lambda -> RDS 처리 흐름 확인
+- SNS Topic publish 흐름 확인. 실제 구독자는 아직 없음
+- CloudFront 프론트 도메인에서 presigned S3 업로드가 가능하도록 이미지 S3 CORS에 CloudFront Origin 추가
 
 ## 썸네일 워커 실제 사진 테스트 결과
 
@@ -55,44 +60,50 @@ Galaxy S25로 촬영한 실제 사진을 사용해 테스트했다.
 
 사진의 장면 복잡도, 노이즈, 원본 압축률에 따라 결과 크기와 처리 시간은 달라질 수 있으므로 위 결과는 대표 측정 사례로 사용한다.
 
-## 현재 안전 설정
+## 현재 설정
 
-- API Lambda `MATCHING_MODE`: `inline`
-- API Lambda에 매칭 SQS Queue URL은 설정되어 있지만 현재 사용하지 않음
-- API Lambda `NOTIFICATION_PUBLISH_MODE`: `in-app`
+- API Lambda `MATCHING_MODE`: `queue`
+- API Lambda `SQS_MATCHING_QUEUE_URL`: `https://sqs.us-east-1.amazonaws.com/730335373015/pj-kmucloud-6-matching-queue-v2`
+- API Lambda `NOTIFICATION_PUBLISH_MODE`: `sns`
+- API Lambda `SNS_NOTIFICATION_TOPIC_ARN`: `arn:aws:sns:us-east-1:730335373015:pj-kmucloud-6-notification-topic-v2`
+- API Lambda VPC 연결: 없음
+- Matching Worker Lambda VPC 연결: 없음
+- RDS `PubliclyAccessible`: `true`
 
 ## 남은 작업
 
-- API Lambda의 SQS 접근 경로 해결 후 `MATCHING_MODE=queue` 전환
-- API Lambda의 SNS 접근 경로 해결 후 `NOTIFICATION_PUBLISH_MODE=sns` 전환
-- SNS 실제 발행 테스트
 - EventBridge Scheduler의 자동 호출 로그 확인
 - 자동 취소, 폐기 검토 알림 등 실제 scheduled job 정책 확정 후 핸들러 구현
+- SNS 실제 구독자 연결과 외부 발송 정책 확정
+- 백엔드 역할 기반 권한 Guard 구현
+- 발표 종료 후 RDS public access와 5432 `0.0.0.0/0` 인바운드 규칙 제거 또는 축소
 
-## 운영자 검토 및 요청사항
+## 운영자 검토 및 처리 결과
 
-### 1. VPC 내부 API Lambda의 SQS 접근 문제
+### 1. VPC 내부 API Lambda의 SQS/SNS 접근 문제
 
-이전에 프라이빗 RDS 연결을 위해 API Lambda를 RDS와 같은 VPC에 연결해주셨다.
+이전에 프라이빗 RDS 연결을 위해 API Lambda와 Matching Worker Lambda를 RDS와 같은 VPC에 연결했다.
 
 - API Lambda: `pj-kmucloud-6-api-handler-v2`
-- VPC: `vpc-026e429eb34e47fb8`
-- Lambda 보안그룹: `sg-0bb36ba6fc5e18c67`
+- Matching Worker Lambda: `pj-kmucloud-6-matching-worker-v2`
 - SQS: `pj-kmucloud-6-matching-queue-v2`
-
-EC2에서는 API Lambda와 동일한 `SafeRole-pj-kmucloud-6` 역할로 SQS 메시지 전송, 조회, 삭제가 가능하다. 하지만 VPC에 연결된 API Lambda에서 SQS에 메시지를 전송하면 오류 메시지 없이 30초 후 timeout이 발생한다.
-
-프라이빗 RDS 접근을 유지하면서 API Lambda가 SQS에도 접근할 수 있도록 필요한 네트워크 구성을 검토 부탁드린다.
-
-### 2. VPC 내부 API Lambda의 SNS 접근 가능성
-
-SNS Topic은 생성했고 속성 조회까지 확인했다.
-
 - SNS Topic: `arn:aws:sns:us-east-1:730335373015:pj-kmucloud-6-notification-topic-v2`
 
-다만 API Lambda는 프라이빗 RDS 접근을 위해 VPC 내부에 들어가 있다. 앞서 SQS 전송이 Lambda 내부에서 timeout 되었던 것처럼, SNS 발행도 같은 네트워크 문제가 발생할 수 있다. 현재 API Lambda는 안전하게 `NOTIFICATION_PUBLISH_MODE=in-app`으로 유지한다.
+VPC 내부 Lambda가 SQS/SNS public service endpoint에 접근하려면 NAT Gateway 또는 VPC Endpoint가 필요했다. 교육용 계정에서는 해당 네트워크 구성이 제한되어 있어, 실습 환경에서는 RDS public access와 Lambda VPC 미연결 구조로 단순화했다.
 
-프라이빗 RDS 접근을 유지하면서 API Lambda가 SNS에도 접근할 수 있도록 필요한 네트워크 구성을 함께 검토 부탁드린다.
+현재 API Lambda와 Matching Worker Lambda는 VPC 연결을 제거했고, RDS는 public endpoint로 접근한다. API Lambda -> SQS -> Matching Worker Lambda 처리와 SNS Topic publish 흐름을 확인했다.
+
+이 구성은 교육용 실습 목적의 타협안이다. 운영 환경에서는 RDS private subnet, Lambda VPC 연결, SQS/SNS VPC Endpoint 또는 NAT Gateway 구성이 더 적절하다.
+
+### 2. RDS public access 보안 주의
+
+현재 RDS는 public access가 켜져 있고 PostgreSQL 5432 포트가 `0.0.0.0/0`에 열려 있다.
+
+- RDS: `pj-kmucloud-6-rds-v2`
+- Endpoint: `pj-kmucloud-6-rds-v2.cj24wem202yj.us-east-1.rds.amazonaws.com`
+- Security Group: `sg-0ca0a81e2878d7541`
+
+발표 종료 후에는 public access를 끄거나, 최소한 5432 인바운드 CIDR을 필요한 소스만 허용하도록 축소해야 한다. DB 비밀번호도 강한 값으로 교체하는 것을 권장한다.
 
 ### 3. CloudFront 구성 완료
 
@@ -117,6 +128,7 @@ CloudFront 배포 하나에 두 개의 S3 Origin을 연결했다.
 - `/images/thumbnails/*`: 목록용 이미지
 - `/images/details/*`: 상세 화면용 이미지
 - 검증: 실제 생성된 WebP 썸네일과 상세 이미지가 CloudFront에서 HTTP 200으로 조회됨
+- 이미지 업로드 CORS: CloudFront Origin `https://d3jxhrfl6v2ils.cloudfront.net`에서 S3 presigned PUT preflight HTTP 200 확인
 
 이미지 버킷은 CloudFront 배포 `E1NAPAY4GOTDVW`가 `/images/*` 객체를 읽을 수 있도록 정책을 적용했다. 원본 `/uploads/originals/*` 객체는 사용자에게 직접 제공하지 않고, 목록용·상세용 변환 이미지만 CloudFront URL로 내려준다.
 
@@ -132,6 +144,13 @@ Scheduled Jobs Lambda는 생성했고 수동 실행 테스트까지 성공했다
 - 기간: 2026-06-05 00:00부터 2026-06-10 00:00까지
 
 현재 핸들러는 자동 취소, 자동 폐기 등 정책이 확정되기 전의 준비용 골격이다. 실제 장기 미수령 처리, 폐기 검토 알림, 자동 취소 정책은 아직 코드로 구현하지 않았다. EC2 역할에는 `scheduler:GetSchedule` 권한이 없어 CLI에서 스케줄 설정 조회는 불가능했으며, Lambda 수동 호출과 로그 스트림 생성은 확인했다.
+
+## 서비스 구현 점검 메모
+
+- 프론트엔드는 역할별 화면 접근을 제한하지만, 백엔드 API에는 아직 역할 기반 Guard가 없다. 현재는 JWT 인증만 통과하면 일반 사용자도 일부 관리자 API를 직접 호출할 수 있다.
+- `GET /api/admin/stats`를 일반 사용자 토큰으로 호출했을 때 HTTP 200이 반환되는 것을 확인했다. 운영 환경에서는 `ADMIN`, `MANAGER`, `USER` 역할별 Guard를 백엔드에 추가해야 한다.
+- `scheduled-jobs` Lambda는 현재 연결 검증용 골격이며 실제 자동 폐기, 자동 취소, 폐기 검토 알림 생성 로직은 없다.
+- SNS Topic은 연결되어 있고 publish 흐름은 확인했지만 실제 구독자가 없어 외부 알림 발송은 아직 수행하지 않는다.
 
 ## 생성된 리소스
 

@@ -30,10 +30,10 @@ EC2
 
 주의:
 
-- DB는 RDS가 아니라 EC2 내부 PostgreSQL 컨테이너를 사용한다.
-- PostgreSQL 데이터는 Docker volume에 저장한다.
-- 과제용 최소 인프라 구조이므로 백업/복구는 직접 관리한다.
-- 이미지 업로드는 기본적으로 EC2 로컬 파일 저장으로 구현하고, 필요하면 S3로 확장한다.
+- V2 AWS 배포에서는 PostgreSQL을 RDS로 분리한다.
+- 과제용 계정의 네트워크 제약 때문에 현재 배포는 RDS public access와 VPC 미연결 Lambda 구조를 사용한다.
+- 운영 환경에서는 RDS private subnet, Lambda VPC 연결, SQS/SNS VPC Endpoint 또는 NAT Gateway 구성이 더 적절하다.
+- V2 AWS 배포에서는 이미지 업로드를 S3 Presigned URL 기반 직접 업로드로 처리한다. EC2 로컬 파일 저장은 V1 또는 로컬 호환 흐름으로만 본다.
 
 ## 2. 역할 정책
 
@@ -394,13 +394,14 @@ PATCH /manager/items/:itemId/disposal
 ### 6.10 Uploads
 
 ```text
-POST /api/uploads/image
+POST /api/uploads/image/presigned-url
 ```
 
 정책:
 
-- 기본 구현은 EC2 로컬 파일 저장 후 `/uploads/파일명` 형태의 상대경로 imageUrl 반환
-- 필요 시 S3 또는 presigned URL 방식으로 변경 가능
+- V2 AWS 배포 기본 흐름은 presigned URL 발급 후 클라이언트가 S3에 직접 PUT 업로드하는 방식이다.
+- 원본 객체 키는 `uploads/originals/*`에 저장하고, S3 Event + Thumbnail Worker가 `images/thumbnails/*`, `images/details/*` WebP 이미지를 생성한다.
+- `POST /api/uploads/image` multipart 엔드포인트는 로컬/레거시 호환용으로 남아 있다.
 
 ## 7. 자동 처리 작업
 
@@ -435,5 +436,5 @@ POST /api/uploads/image
 8. Pickups 상태 전환 구현
 9. Search/Notifications 구현
 10. Admin/Manager API 구현
-11. 로컬 이미지 업로드 구현
+11. S3 Presigned URL 이미지 업로드 구현
 12. 프론트 `VITE_USE_MOCK=false` 연결

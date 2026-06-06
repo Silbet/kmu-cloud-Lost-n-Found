@@ -52,7 +52,18 @@ PATCH  /api/items/:itemId/status   { status } → FoundItem
 ## 이미지 업로드
 
 ```
+POST   /api/uploads/image/presigned-url
+  { filename, contentType, purpose }
+  → { uploadUrl, objectKey, imageUrl, method, expiresIn, headers }
+
+# V2 기본 업로드 흐름:
+# 1. 클라이언트가 presigned URL을 발급받는다.
+# 2. 클라이언트가 S3 uploadUrl로 원본 이미지를 직접 PUT 업로드한다.
+# 3. 클라이언트가 objectKey/imageUrl을 분실 신고 또는 습득물 등록 payload에 포함한다.
+# 4. S3 Event + Thumbnail Worker가 목록용·상세용 WebP 이미지를 생성한다.
+
 POST   /api/uploads/image  (multipart/form-data: file) → { imageUrl }
+  # 로컬/레거시 호환용 엔드포인트. V2 AWS 배포 기본 흐름에서는 presigned URL 방식을 사용한다.
 ```
 
 ## 매칭 / 확인 요청
