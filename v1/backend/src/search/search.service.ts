@@ -14,9 +14,13 @@ export class SearchService {
 
   async searchLost(params: Record<string, string>, loggedIn: boolean) {
     const status = fromLostReportStatus(params.status);
+    const statusFilter =
+      status === LostReportStatus.RECEIVED || status === LostReportStatus.MATCH_CANDIDATE
+        ? { in: [LostReportStatus.RECEIVED, LostReportStatus.MATCH_CANDIDATE] }
+        : status;
     const reports = await this.prisma.lostReport.findMany({
       where: {
-        status: status ?? { not: LostReportStatus.CLOSED },
+        status: statusFilter ?? { not: LostReportStatus.CLOSED },
         category: params.category || undefined,
         lostPlace: params.place ? { contains: params.place } : undefined,
         lostAt: this.dateRange(params.dateFrom, params.dateTo),
@@ -31,6 +35,9 @@ export class SearchService {
     });
     return reports.map((report) => {
       const dto = toLostReport(report);
+      if (dto.status === '매칭후보있음') {
+        dto.status = '접수';
+      }
       if (!loggedIn) {
         dto.reporterName = this.maskName(dto.reporterName);
         dto.reporterContact = this.maskContact(dto.reporterContact);

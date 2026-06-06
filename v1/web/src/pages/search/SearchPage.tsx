@@ -18,12 +18,11 @@ import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import type { LostReport, FoundItem } from '@/types';
 
-const LOST_STATUSES = ['접수', '매칭후보있음', '찾기완료', '종료'];
+const LOST_STATUSES = ['접수', '찾기완료', '종료'];
 const FOUND_STATUSES = ['등록', '보관중', '수령대기', '수령완료', '폐기예정'];
 
 const STATUS_LEGEND = [
   { status: '접수', desc: '신고만 접수된 상태' },
-  { status: '매칭후보있음', desc: '매칭 후보가 발견됨' },
   { status: '찾기완료', desc: '분실물을 찾았습니다' },
   { status: '종료', desc: '처리 완료' },
 ];
