@@ -45,6 +45,7 @@ export function SearchPage() {
   // 승인 요청 플로우 상태
   const [claimTarget, setClaimTarget] = useState<FoundItem | null>(null);
   const [selectedReportId, setSelectedReportId] = useState('');
+  const [selfClaimAlert, setSelfClaimAlert] = useState(false);
 
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.roles.includes('운영관리자');
@@ -82,7 +83,13 @@ export function SearchPage() {
       setSelectedFound(null);
       setSelectedReportId('');
     },
-    onError: (e: any) => toast(e?.message || '요청 실패', 'error'),
+    onError: (e: any) => {
+      if (e?.response?.data?.error?.code === 'SELF_MATCH_NOT_ALLOWED') {
+        setSelfClaimAlert(true);
+        return;
+      }
+      toast(e?.response?.data?.error?.message || e?.message || '요청 실패', 'error');
+    },
   });
 
   function applyFilters() { setFilters({ ...draft }); }
@@ -93,6 +100,10 @@ export function SearchPage() {
 
   function openClaim(item: FoundItem, e: React.MouseEvent) {
     e.stopPropagation();
+    if (user && item.finderId === user.userId) {
+      setSelfClaimAlert(true);
+      return;
+    }
     setSelectedReportId('');
     setClaimTarget(item);
   }
@@ -318,6 +329,15 @@ export function SearchPage() {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={selfClaimAlert}
+        onClose={() => setSelfClaimAlert(false)}
+        title="확인 요청 불가"
+        footer={<Button onClick={() => setSelfClaimAlert(false)}>확인</Button>}
+      >
+        <p className="text-sm text-gray-700">내 물건에는 확인 요청을 보낼 수 없습니다.</p>
       </Modal>
 
       {/* ── 분실 신고 선택 모달 (확인 요청) ── */}

@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { LostReportStatus, MatchStatus } from '@prisma/client';
+import { LostReport, LostReportStatus, MatchStatus } from '@prisma/client';
 import { ApiError } from '../common/api-error';
 import { toLostReport } from '../common/mappers';
 import { MatchingJobDispatcherService } from '../matching/matching-job-dispatcher.service';
@@ -37,7 +37,7 @@ export class ReportsService {
       where: { reporterId: userId },
       orderBy: { createdAt: 'desc' },
     });
-    return reports.map(toLostReport);
+    return Promise.all(reports.map((report) => this.toVisibleLostReport(report)));
   }
 
   async findOne(reportId: string) {
@@ -47,7 +47,7 @@ export class ReportsService {
     if (!report) {
       throw new ApiError(HttpStatus.NOT_FOUND, 'NOT_FOUND', '신고를 찾을 수 없습니다.');
     }
-    return toLostReport(report);
+    return this.toVisibleLostReport(report);
   }
 
   async update(userId: string, reportId: string, dto: UpdateReportDto) {
@@ -118,5 +118,22 @@ export class ReportsService {
       throw new ApiError(HttpStatus.FORBIDDEN, 'FORBIDDEN', '본인 신고만 처리할 수 있습니다.');
     }
     return report;
+  }
+
+  private async toVisibleLostReport(report: LostReport) {
+    const dto = toLostReport(report);
+    if (report.status !== LostReportStatus.MATCH_CANDIDATE) return dto;
+
+    const visibleMatches = await this.prisma.match.count({
+      where: {
+        reportId: report.id,
+        status: { in: [MatchStatus.ACTIVE, MatchStatus.CONFIRM_REQUESTED] },
+        item: { finderId: { not: report.reporterId } },
+      },
+    });
+    if (visibleMatches === 0) {
+      dto.status = '접수';
+    }
+    return dto;
   }
 }
