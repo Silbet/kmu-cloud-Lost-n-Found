@@ -31,6 +31,9 @@ export class SearchService {
     });
     return reports.map((report) => {
       const dto = toLostReport(report);
+      if (dto.status === '매칭후보있음') {
+        dto.status = '접수';
+      }
       if (!loggedIn) {
         dto.reporterName = this.maskName(dto.reporterName);
         dto.reporterContact = this.maskContact(dto.reporterContact);
