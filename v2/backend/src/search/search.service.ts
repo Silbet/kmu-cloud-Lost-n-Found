@@ -14,9 +14,13 @@ export class SearchService {
 
   async searchLost(params: Record<string, string>, loggedIn: boolean) {
     const status = fromLostReportStatus(params.status);
+    const statusFilter =
+      status === LostReportStatus.RECEIVED || status === LostReportStatus.MATCH_CANDIDATE
+        ? { in: [LostReportStatus.RECEIVED, LostReportStatus.MATCH_CANDIDATE] }
+        : status;
     const reports = await this.prisma.lostReport.findMany({
       where: {
-        status: status ?? { not: LostReportStatus.CLOSED },
+        status: statusFilter ?? { not: LostReportStatus.CLOSED },
         category: params.category || undefined,
         lostPlace: params.place ? { contains: params.place } : undefined,
         lostAt: this.dateRange(params.dateFrom, params.dateTo),
