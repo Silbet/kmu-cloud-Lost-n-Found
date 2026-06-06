@@ -122,15 +122,36 @@ export class MatchesService {
     if (match.status !== MatchStatus.CONFIRM_REQUESTED) {
       throw new ApiError(HttpStatus.CONFLICT, 'INVALID_STATUS', '반려할 수 없는 매칭 상태입니다.');
     }
-    const updated = await this.prisma.match.update({
-      where: { id: matchId },
-      data: {
-        status: MatchStatus.REJECTED,
-        rejectReason: reason,
-        reviewedAt: new Date(),
-      },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const rejected = await tx.match.update({
+        where: { id: matchId },
+        data: {
+          status: MatchStatus.REJECTED,
+          rejectReason: reason,
+          reviewedAt: new Date(),
+        },
+      });
+      const report = await tx.lostReport.findUnique({ where: { id: match.reportId } });
+      if (report) {
+        const notification = await tx.notification.create({
+          data: {
+            userId: report.reporterId,
+            type: '확인요청반려',
+            title: '확인 요청이 반려되었습니다.',
+            message: reason ? `반려 사유: ${reason}` : '보관소 관리자가 확인 요청을 반려했습니다.',
+            link: `/reports/${report.id}`,
+          },
+        });
+        return { rejected, notification };
+      }
+      return { rejected, notification: undefined };
     });
-    return toMatch(updated);
+
+    if (result.notification) {
+      await this.notificationPublisher.publish(result.notification);
+    }
+
+    return toMatch(result.rejected);
   }
 
   async claim(userId: string, itemId: string, reportId: string) {
