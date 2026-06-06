@@ -75,8 +75,14 @@ export class SearchService {
     if (!dateFrom && !dateTo) return undefined;
     return {
       gte: dateFrom ? new Date(dateFrom) : undefined,
-      lte: dateTo ? new Date(dateTo) : undefined,
+      lte: dateTo ? this.endOfDay(dateTo) : undefined,
     };
+  }
+
+  private endOfDay(date: string) {
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    return end;
   }
 
   private maskName(name: string) {
