@@ -93,8 +93,9 @@ export class MatchesService {
         where: { id: match.itemId },
         data: { status: FoundItemStatus.PICKUP_WAITING },
       });
-      await tx.pickup.create({
-        data: {
+      await tx.pickup.upsert({
+        where: { matchId },
+        create: {
           matchId,
           reportId: match.reportId,
           itemId: match.itemId,
@@ -102,6 +103,16 @@ export class MatchesService {
           status: PickupStatus.WAITING,
           waitingStartedAt: now,
           autoCancelAt,
+        },
+        update: {
+          pickupCode,
+          status: PickupStatus.WAITING,
+          waitingStartedAt: now,
+          autoCancelAt,
+          completedAt: null,
+          cancelledAt: null,
+          cancelReason: null,
+          verifierId: null,
         },
       });
       const report = await tx.lostReport.findUnique({ where: { id: match.reportId } });
