@@ -107,8 +107,11 @@ export class ScheduledJobsService {
 
     let notifications = 0;
     for (const item of items) {
-      const link = `/admin/unclaimed?itemId=${item.id}`;
       for (const manager of managers) {
+        const link =
+          manager.role === UserRole.ADMIN
+            ? `/admin/unclaimed?itemId=${item.id}`
+            : `/manager/items?itemId=${item.id}`;
         const exists = await this.prisma.notification.findFirst({
           where: {
             userId: manager.id,
