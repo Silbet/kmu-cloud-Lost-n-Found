@@ -9,21 +9,26 @@ export class MatchesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listForReport(reportId: string) {
+    const report = await this.prisma.lostReport.findUnique({ where: { id: reportId } });
     const matches = await this.prisma.match.findMany({
       where: { reportId },
       include: { item: true },
       orderBy: { createdAt: 'desc' },
     });
-    return matches.map((match) => ({ ...toMatch(match), item: toFoundItem(match.item) }));
+    return matches
+      .filter((match) => !report || !this.isSelfMatch(report.reporterId, match.item.finderId))
+      .map((match) => ({ ...toMatch(match), item: toFoundItem(match.item) }));
   }
 
   async listPending() {
     const matches = await this.prisma.match.findMany({
       where: { status: MatchStatus.CONFIRM_REQUESTED },
-      include: { item: true },
+      include: { item: true, report: true },
       orderBy: { requestedAt: 'desc' },
     });
-    return matches.map((match) => ({ ...toMatch(match), item: toFoundItem(match.item) }));
+    return matches
+      .filter((match) => !this.isSelfMatch(match.report.reporterId, match.item.finderId))
+      .map((match) => ({ ...toMatch(match), item: toFoundItem(match.item) }));
   }
 
   async confirm(userId: string, matchId: string) {
@@ -167,8 +172,12 @@ export class MatchesService {
   }
 
   private assertNotSelfMatch(reporterId: string, finderId?: string | null) {
-    if (finderId && finderId === reporterId) {
+    if (this.isSelfMatch(reporterId, finderId)) {
       throw new ApiError(HttpStatus.CONFLICT, 'SELF_MATCH_NOT_ALLOWED', '본인이 등록한 습득물은 본인 신고와 매칭할 수 없습니다.');
     }
+  }
+
+  private isSelfMatch(reporterId: string, finderId?: string | null) {
+    return Boolean(finderId && finderId === reporterId);
   }
 }
