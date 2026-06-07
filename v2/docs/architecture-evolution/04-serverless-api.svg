@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+  <style>
+    .title { font: 700 29px Arial, sans-serif; fill:#111827; }
+    .subtitle { font: 400 15px Arial, sans-serif; fill:#475569; }
+    .node-label { font: 700 15px Arial, sans-serif; fill:#111827; }
+    .node-label.small { font-size: 13px; font-weight: 600; fill:#334155; }
+    .edge { fill:none; stroke:#475569; stroke-width:2.2; }
+    .edge-label { font: 600 12px Arial, sans-serif; fill:#334155; paint-order:stroke; stroke:#ffffff; stroke-width:5px; stroke-linejoin:round; }
+    .note { font: 500 14px Arial, sans-serif; fill:#334155; }
+  </style>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="55" y="50" class="title">4. API 서버리스 전환</text>
+<text x="55" y="78" class="subtitle">DB/이미지/정적 파일 의존성을 분리한 뒤 API 실행 환경을 API Gateway + Lambda로 전환.</text>
+<rect x="40" y="100" width="1165" height="260" rx="18" fill="#FAFAFA" stroke="#E5E7EB"/>
+<rect x="40" y="390" width="1165" height="330" rx="18" fill="#FAFAFA" stroke="#E5E7EB"/>
+<text x="60" y="128" class="note">정적 파일 / 이미지 제공 영역</text>
+<text x="60" y="418" class="note">API / 데이터 / 비동기 처리 영역</text>
+
+<path d="M 185 345.0 L 255 156.0" class="edge" marker-end="url(#arrow)"/><text x="220.0" y="241.5" text-anchor="middle" class="edge-label">웹 접속</text>
+<path d="M 440 156.0 L 485 156 L 535 111.0" class="edge" marker-end="url(#arrow)"/><text x="485" y="147" text-anchor="middle" class="edge-label">/*</text>
+<path d="M 440 156.0 L 485 156 L 485 276 L 535 276.0" class="edge" marker-end="url(#arrow)"/><text x="485" y="267" text-anchor="middle" class="edge-label">/images/*</text>
+<path d="M 120.0 380 L 120 515 L 255 514.0" class="edge" marker-end="url(#arrow)"/><text x="120" y="506" text-anchor="middle" class="edge-label">API 요청</text>
+<path d="M 440 514.0 L 535 509.0" class="edge" marker-end="url(#arrow)"/><text x="487.5" y="502.5" text-anchor="middle" class="edge-label">HTTP API</text>
+<path d="M 745 509.0 L 890 509.0" class="edge" marker-end="url(#arrow)"/><text x="817.5" y="500.0" text-anchor="middle" class="edge-label">DB 읽기/쓰기</text>
+<path d="M 640.0 465 L 640.0 317" class="edge" marker-end="url(#arrow)"/><text x="640.0" y="382.0" text-anchor="middle" class="edge-label">Presigned URL</text>
+<rect x="55" y="310" width="130" height="70" rx="12" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+<circle cx="81" cy="336" r="13" fill="#64748B" opacity="0.9"/>
+<text x="136.0" y="350.0" text-anchor="middle" class="node-label">사용자</text>
+<rect x="255" y="115" width="185" height="82" rx="12" fill="#FFF7ED" stroke="#F59E0B" stroke-width="2"/>
+<circle cx="281" cy="141" r="13" fill="#F59E0B" opacity="0.9"/>
+<text x="363.5" y="152.0" text-anchor="middle" class="node-label">CloudFront</text>
+<text x="363.5" y="174.0" text-anchor="middle" class="node-label small">정적/이미지 조회</text>
+<rect x="535" y="70" width="210" height="82" rx="12" fill="#F0FDF4" stroke="#22C55E" stroke-width="2"/>
+<circle cx="561" cy="96" r="13" fill="#22C55E" opacity="0.9"/>
+<text x="656.0" y="107.0" text-anchor="middle" class="node-label">Frontend S3</text>
+<text x="656.0" y="129.0" text-anchor="middle" class="node-label small">React 정적 배포</text>
+<rect x="535" y="235" width="210" height="82" rx="12" fill="#F0FDF4" stroke="#22C55E" stroke-width="2"/>
+<circle cx="561" cy="261" r="13" fill="#22C55E" opacity="0.9"/>
+<text x="656.0" y="272.0" text-anchor="middle" class="node-label">Image S3</text>
+<text x="656.0" y="294.0" text-anchor="middle" class="node-label small">이미지 저장소</text>
+<rect x="255" y="475" width="185" height="78" rx="12" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="2"/>
+<circle cx="281" cy="501" r="13" fill="#8B5CF6" opacity="0.9"/>
+<text x="363.5" y="519.0" text-anchor="middle" class="node-label">API Gateway</text>
+<rect x="535" y="465" width="210" height="88" rx="12" fill="#FFF7ED" stroke="#F97316" stroke-width="2"/>
+<circle cx="561" cy="491" r="13" fill="#F97316" opacity="0.9"/>
+<text x="656.0" y="505.0" text-anchor="middle" class="node-label">API Lambda</text>
+<text x="656.0" y="527.0" text-anchor="middle" class="node-label small">API 서버</text>
+<rect x="890" y="465" width="210" height="88" rx="12" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+<circle cx="916" cy="491" r="13" fill="#3B82F6" opacity="0.9"/>
+<text x="1011.0" y="505.0" text-anchor="middle" class="node-label">RDS PostgreSQL</text>
+<text x="1011.0" y="527.0" text-anchor="middle" class="node-label small">서비스 DB</text>
+<rect x="55" y="705" width="650" height="40" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<text x="75" y="730" class="note">핵심: EC2 API 서버 의존도 감소 / 요청 기반 실행/자동 확장 구조로 전환</text>
+</svg>

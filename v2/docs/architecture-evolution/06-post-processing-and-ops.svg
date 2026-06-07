@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+  <style>
+    .title { font: 700 29px Arial, sans-serif; fill:#111827; }
+    .subtitle { font: 400 15px Arial, sans-serif; fill:#475569; }
+    .node-label { font: 700 15px Arial, sans-serif; fill:#111827; }
+    .node-label.small { font-size: 13px; font-weight: 600; fill:#334155; }
+    .edge { fill:none; stroke:#475569; stroke-width:2.2; }
+    .edge-label { font: 600 12px Arial, sans-serif; fill:#334155; paint-order:stroke; stroke:#ffffff; stroke-width:5px; stroke-linejoin:round; }
+    .note { font: 500 14px Arial, sans-serif; fill:#334155; }
+  </style>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="55" y="50" class="title">6. 후처리/알림/시간 기반 작업 분리</text>
+<text x="55" y="78" class="subtitle">이미지 변환, 알림 발행, 장기 미수령 처리는 사용자 요청 흐름 밖에서 독립 실행.</text>
+<rect x="40" y="100" width="1165" height="260" rx="18" fill="#FAFAFA" stroke="#E5E7EB"/>
+<rect x="40" y="390" width="1165" height="330" rx="18" fill="#FAFAFA" stroke="#E5E7EB"/>
+<text x="60" y="128" class="note">정적 파일 / 이미지 제공 영역</text>
+<text x="60" y="418" class="note">API / 데이터 / 비동기 처리 영역</text>
+
+<path d="M 185 345.0 L 255 156.0" class="edge" marker-end="url(#arrow)"/><text x="220.0" y="241.5" text-anchor="middle" class="edge-label">웹 접속</text>
+<path d="M 440 156.0 L 485 156 L 535 111.0" class="edge" marker-end="url(#arrow)"/><text x="485" y="147" text-anchor="middle" class="edge-label">/*</text>
+<path d="M 440 156.0 L 485 156 L 485 276 L 535 276.0" class="edge" marker-end="url(#arrow)"/><text x="485" y="267" text-anchor="middle" class="edge-label">/images/*</text>
+<path d="M 120.0 380 L 120 515 L 255 514.0" class="edge" marker-end="url(#arrow)"/><text x="120" y="506" text-anchor="middle" class="edge-label">API 요청</text>
+<path d="M 440 514.0 L 535 509.0" class="edge" marker-end="url(#arrow)"/><text x="487.5" y="502.5" text-anchor="middle" class="edge-label">HTTP API</text>
+<path d="M 745 509.0 L 890 509.0" class="edge" marker-end="url(#arrow)"/><text x="817.5" y="500.0" text-anchor="middle" class="edge-label">DB 읽기/쓰기</text>
+<path d="M 640.0 465 L 640.0 317" class="edge" marker-end="url(#arrow)"/><text x="640.0" y="382.0" text-anchor="middle" class="edge-label">Presigned URL</text>
+<path d="M 640.0 553 L 627.5 610" class="edge" marker-end="url(#arrow)"/><text x="633.75" y="572.5" text-anchor="middle" class="edge-label">매칭 작업</text>
+<path d="M 720 649.0 L 825 649.0" class="edge" marker-end="url(#arrow)"/><text x="772.5" y="640.0" text-anchor="middle" class="edge-label">작업 소비</text>
+<path d="M 917.5 610 L 918 575 L 995.0 553" class="edge" marker-end="url(#arrow)"/><text x="918" y="566" text-anchor="middle" class="edge-label">결과 저장</text>
+<path d="M 627.5 688 L 627.5 700" class="edge" marker-end="url(#arrow)" stroke-dasharray="6 5"/><text x="627.5" y="685.0" text-anchor="middle" class="edge-label">반복 실패</text>
+<path d="M 745 276.0 L 890 276.0" class="edge" marker-end="url(#arrow)"/><text x="817.5" y="267.0" text-anchor="middle" class="edge-label">S3 이벤트</text>
+<path d="M 890 276.0 L 835 318 L 835 300 L 745 276.0" class="edge" marker-end="url(#arrow)" stroke-dasharray="6 5"/><text x="835" y="291" text-anchor="middle" class="edge-label">썸네일/상세 생성</text>
+<path d="M 535 509.0 L 500 504 L 500 649 L 440 649.0" class="edge" marker-end="url(#arrow)"/><text x="500" y="640" text-anchor="middle" class="edge-label">알림 발행</text>
+<path d="M 1010 735.0 L 1040 735.0" class="edge" marker-end="url(#arrow)"/><text x="1025.0" y="726.0" text-anchor="middle" class="edge-label">정기 실행</text>
+<path d="M 1135.0 700 L 1135 660 L 995 660 L 995.0 553" class="edge" marker-end="url(#arrow)" stroke-dasharray="6 5"/><text x="995" y="651" text-anchor="middle" class="edge-label">장기 미수령 조회/처리</text>
+<rect x="55" y="310" width="130" height="70" rx="12" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+<circle cx="81" cy="336" r="13" fill="#64748B" opacity="0.9"/>
+<text x="136.0" y="350.0" text-anchor="middle" class="node-label">사용자</text>
+<rect x="255" y="115" width="185" height="82" rx="12" fill="#FFF7ED" stroke="#F59E0B" stroke-width="2"/>
+<circle cx="281" cy="141" r="13" fill="#F59E0B" opacity="0.9"/>
+<text x="363.5" y="152.0" text-anchor="middle" class="node-label">CloudFront</text>
+<text x="363.5" y="174.0" text-anchor="middle" class="node-label small">정적/이미지 조회</text>
+<rect x="535" y="70" width="210" height="82" rx="12" fill="#F0FDF4" stroke="#22C55E" stroke-width="2"/>
+<circle cx="561" cy="96" r="13" fill="#22C55E" opacity="0.9"/>
+<text x="656.0" y="107.0" text-anchor="middle" class="node-label">Frontend S3</text>
+<text x="656.0" y="129.0" text-anchor="middle" class="node-label small">React 정적 배포</text>
+<rect x="535" y="235" width="210" height="82" rx="12" fill="#F0FDF4" stroke="#22C55E" stroke-width="2"/>
+<circle cx="561" cy="261" r="13" fill="#22C55E" opacity="0.9"/>
+<text x="656.0" y="272.0" text-anchor="middle" class="node-label">Image S3</text>
+<text x="656.0" y="294.0" text-anchor="middle" class="node-label small">이미지 저장소</text>
+<rect x="255" y="475" width="185" height="78" rx="12" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="2"/>
+<circle cx="281" cy="501" r="13" fill="#8B5CF6" opacity="0.9"/>
+<text x="363.5" y="519.0" text-anchor="middle" class="node-label">API Gateway</text>
+<rect x="535" y="465" width="210" height="88" rx="12" fill="#FFF7ED" stroke="#F97316" stroke-width="2"/>
+<circle cx="561" cy="491" r="13" fill="#F97316" opacity="0.9"/>
+<text x="656.0" y="505.0" text-anchor="middle" class="node-label">API Lambda</text>
+<text x="656.0" y="527.0" text-anchor="middle" class="node-label small">API 서버</text>
+<rect x="890" y="465" width="210" height="88" rx="12" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+<circle cx="916" cy="491" r="13" fill="#3B82F6" opacity="0.9"/>
+<text x="1011.0" y="505.0" text-anchor="middle" class="node-label">RDS PostgreSQL</text>
+<text x="1011.0" y="527.0" text-anchor="middle" class="node-label small">서비스 DB</text>
+<rect x="535" y="610" width="185" height="78" rx="12" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="2"/>
+<circle cx="561" cy="636" r="13" fill="#8B5CF6" opacity="0.9"/>
+<text x="643.5" y="645.0" text-anchor="middle" class="node-label">SQS</text>
+<text x="643.5" y="667.0" text-anchor="middle" class="node-label small">매칭 큐</text>
+<rect x="825" y="610" width="185" height="78" rx="12" fill="#FFF7ED" stroke="#F97316" stroke-width="2"/>
+<circle cx="851" cy="636" r="13" fill="#F97316" opacity="0.9"/>
+<text x="933.5" y="645.0" text-anchor="middle" class="node-label">Lambda</text>
+<text x="933.5" y="667.0" text-anchor="middle" class="node-label small">매칭 워커</text>
+<rect x="535" y="700" width="185" height="70" rx="12" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+<circle cx="561" cy="726" r="13" fill="#EF4444" opacity="0.9"/>
+<text x="643.5" y="731.0" text-anchor="middle" class="node-label">DLQ</text>
+<text x="643.5" y="753.0" text-anchor="middle" class="node-label small">매칭 실패 큐</text>
+<rect x="890" y="235" width="210" height="82" rx="12" fill="#FFF7ED" stroke="#F97316" stroke-width="2"/>
+<circle cx="916" cy="261" r="13" fill="#F97316" opacity="0.9"/>
+<text x="1011.0" y="272.0" text-anchor="middle" class="node-label">Lambda</text>
+<text x="1011.0" y="294.0" text-anchor="middle" class="node-label small">이미지 후처리</text>
+<rect x="255" y="610" width="185" height="78" rx="12" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="2"/>
+<circle cx="281" cy="636" r="13" fill="#8B5CF6" opacity="0.9"/>
+<text x="363.5" y="645.0" text-anchor="middle" class="node-label">SNS</text>
+<text x="363.5" y="667.0" text-anchor="middle" class="node-label small">알림 Topic</text>
+<rect x="825" y="700" width="185" height="70" rx="12" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="2"/>
+<circle cx="851" cy="726" r="13" fill="#8B5CF6" opacity="0.9"/>
+<text x="933.5" y="731.0" text-anchor="middle" class="node-label">EventBridge</text>
+<text x="933.5" y="753.0" text-anchor="middle" class="node-label small">스케줄러</text>
+<rect x="1040" y="700" width="190" height="70" rx="12" fill="#FFF7ED" stroke="#F97316" stroke-width="2"/>
+<circle cx="1066" cy="726" r="13" fill="#F97316" opacity="0.9"/>
+<text x="1151.0" y="731.0" text-anchor="middle" class="node-label">Lambda</text>
+<text x="1151.0" y="753.0" text-anchor="middle" class="node-label small">장기 미수령 처리</text>
+<rect x="55" y="705" width="650" height="40" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<text x="75" y="730" class="note">핵심: 원본 이미지는 보관, 사용자 화면은 최적화 이미지 제공 / 시간 기반 작업을 브라우저 접속 여부와 분리</text>
+</svg>
